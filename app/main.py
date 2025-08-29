@@ -27,3 +27,13 @@ async def root():
         "message": "Vector Database API is running",
         "version": settings.app_version,
     }
+
+
+@app.get("/health")
+async def health_check():
+    logger.info("Health check accessed")
+    return {
+        "status": "healthy",
+        "service": settings.app_title,
+        "version": settings.app_version,
+    }
