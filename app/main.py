@@ -2,13 +2,16 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.logger import logger
-from app.settings import settings
+from .logger import logger
+from .settings import settings
+from .routes import libraries_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Vector Database API startup complete")
     yield
+    logger.info("Vector Database API shutdown")
 
 
 app = FastAPI(
@@ -18,6 +21,7 @@ app = FastAPI(
     debug=settings.debug,
     lifespan=lifespan,
 )
+app.include_router(libraries_router)
 
 
 @app.get("/")
