@@ -22,7 +22,7 @@ dev = [
 line-length = 88
 target-version = "py313"
 
-select = [
+lint.select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
     "F",  # pyflakes
@@ -31,7 +31,7 @@ select = [
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
 ]
-ignore = [
+lint.ignore = [
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
 ]
