@@ -1,7 +1,8 @@
-import pytest
-from app.embeddings import Embedder
 from pathlib import Path
 
+import pytest
+
+from app.embeddings import Embedder
 from app.models.document import Document
 from app.models.library import Library
 from app.utils.load_documents import load_documents_from_directory
@@ -37,6 +38,7 @@ def docs_in_db(vdb):
         )
 
         chunks = vdb.process_and_store(doc)
+        return chunks
 
 
 class TestSearch:
@@ -47,11 +49,14 @@ class TestSearch:
         document = Document(
             library_id=created_lib.id,
             title="Search Document",
-            content="like the north face of Mount Assiniboine and the Emperor Face of Mount Robson",
+            content="""
+            like the north face of Mount Assiniboine and the Emperor Face of
+            Mount Robson
+            """,
         )
 
         created_doc = vdb.create_document(document)
         _, embedding, _ = Embedder().chunk_and_embed(created_doc.content)
 
-        similar = vdb.search_similar(embedding)
+        similar = vdb._search_similar(embedding)
         assert "Assiniboine" in similar[0].content

@@ -36,7 +36,7 @@ class Embedder:
         chunks_gen = self._chunk_text(content)
         chunks = [(n, len(n)) for n in chunks_gen]
 
-        chunks, chunk_lens = zip(*chunks)
+        chunks, chunk_lens = zip(*chunks, strict=False)
         embeddings = self.embed(chunks)
         return chunks, embeddings, chunk_lens
 

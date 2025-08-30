@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     port: int = 8000
 
     cohere_api_key: str | None = None
+    db_path: str = "data/demo.sqlite"
 
 
 settings = Settings()

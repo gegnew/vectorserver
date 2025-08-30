@@ -1,7 +1,8 @@
+from pathlib import Path
+
 from app.models.chunk import Chunk
 from app.models.document import Document
 from app.models.library import Library
-from pathlib import Path
 from app.utils.load_documents import load_documents_from_directory
 
 
@@ -98,7 +99,9 @@ class TestCreateEmbeddings:
         library = vdb.create_library(
             Library(
                 name="Test Document Library",
-                description="Library containing test documents for chunking and embedding",
+                description="""
+                Library containing test documents for chunking and embedding
+                """,
                 metadata={
                     "source": "test_documents",
                     "processed_by": "pytest",
@@ -121,7 +124,7 @@ class TestCreateEmbeddings:
                 )
             )
 
-            chunks = vdb.process_and_store(doc)
+            vdb.process_and_store(doc)
 
         all_chunks = vdb.get_chunks()
         assert len(documents) == 2

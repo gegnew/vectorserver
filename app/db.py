@@ -1,14 +1,16 @@
 import json
-import numpy as np
 import sqlite3
 from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
+import numpy as np
+
 from app.embeddings import Embedder
 from app.models.chunk import Chunk
 from app.models.document import Document
 from app.models.library import Library
+from app.settings import settings
 
 _TABLES = """
 CREATE TABLE IF NOT EXISTS libraries (
@@ -309,9 +311,9 @@ class VectorDB:
     def process_and_store(self, document: Document):
         chunks, embeddings, chunk_lens = self.embedder.chunk_and_embed(document.content)
 
-        total_chunks = len(chunk_lens)
+        len(chunk_lens)
         for j, (chunk, embedding, chunk_len) in enumerate(
-            zip(chunks, embeddings, chunk_lens)
+            zip(chunks, embeddings, chunk_lens, strict=False)
         ):
 
             embedding_bytes = embedding.tobytes()
@@ -332,8 +334,8 @@ class VectorDB:
 
             chunk = self.create_chunk(chunk)
 
-    def search_similar(self, search_vector: list[float]):
-        query_np = np.array(search_vector).reshape(1, -1)
+    def _search_similar(self, search_vector: list[float]):
+        np.array(search_vector).reshape(1, -1)
         chunks = self.get_chunks()
         vectors = np.array([np.frombuffer(chunk.embedding) for chunk in chunks])
 
@@ -342,3 +344,22 @@ class VectorDB:
         )
 
         return list(np.array(chunks)[indices])
+
+    def search_similar(self, content: str, name: str = "Search"):
+        library = self.create_library(Library(name=name))
+
+        document = Document(
+            library_id=library.id,
+            title=name,
+            content=content,
+        )
+
+        created_doc = self.create_document(document)
+        _, embedding, _ = Embedder().chunk_and_embed(created_doc.content)
+        chunk = self._search_similar(embedding)[0]
+        document = self.get_document(chunk.document_id)
+        return document
+
+
+def get_db():
+    return VectorDB(settings.db_path)

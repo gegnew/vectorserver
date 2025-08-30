@@ -3,8 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .logger import logger
+from .routes import libraries_router, search_router
 from .settings import settings
-from .routes import libraries_router
 
 
 @asynccontextmanager
@@ -22,6 +22,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(libraries_router)
+app.include_router(search_router)
 
 
 @app.get("/")
