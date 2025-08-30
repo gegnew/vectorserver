@@ -1,6 +1,5 @@
 *.http
 *.sqlite
-*.txt
 .env
 .envrc
 .DS_Store
