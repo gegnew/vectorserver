@@ -20,4 +20,7 @@ class TestDB:
             cursor = conn.cursor()
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
             res = cursor.fetchall()
-            assert len(res) != 0
+            assert ("libraries",) in res
+            assert ("documents",) in res
+            assert ("chunks",) in res
+            assert len(res) == 3
