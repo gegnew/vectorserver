@@ -1,5 +1,7 @@
 # VectorServer - Document Embedding and Retrieval System
 
+## STATUS - INCOMPLETE
+
 A FastAPI-based vector database system for document chunking, embedding, and semantic search using Cohere's embedding models.
 
 ## Overview
@@ -11,6 +13,44 @@ VectorServer is a document processing and retrieval system that:
 - Generates vector embeddings using Cohere's embed-v4.0 model
 - Provides semantic search capabilities across document collections
 - Offers a RESTful API for document management and search
+
+## Task Completion Status
+
+1. 🟢 Define the Chunk, Document and Library classes.
+2. 🟡 Implement two or three indexing algorithms, do not use external libraries,
+   1. 🟢 Exact kNN:
+   - Time complexity: O(nd)
+   - Space complexity: O(n)
+   - Simplest and fastest to implement; most precise and fast enough for small datasets.
+   2. 🔴 Hierarchical k-means tree:
+   - Time complexity: O(log n) for search
+   - Space complexity: O(n)
+   - Fast and reasonably accurate
+3. 🟡 Implement the necessary data structures/algorithms to ensure that there
+   are no data races between reads and writes to the database.
+   - I chose to use Sqlite to bypass this problem:
+     - Sqlite is [threadsafe](https://sqlite.org/faq.html#q6)
+     - Sqlite is [supports concurrency](https://sqlite.org/faq.html#q5)
+     - This isn't a perfect solution, and reading/writing to Sqlite is certainly
+       slower than storing vectors in memory (or in an in-memory cache like
+       Redis, for a bit more structure; I also considered writing all the
+       embeddings to Redis with the embedding as the key and the content as the
+       value). Improving this is a to-do.
+4. 🟢 Create the logic to do the CRUD operations on libraries and
+   documents/chunks.
+   - Most DB operations not implemented
+5. 🟡 Implement an API layer on top of that logic to let users interact with the
+   vector database.
+   - All endpoints not yet implemented
+6. 🟢 Create a docker image for the project
+   - sufficient for development, but not for production
+
+### Extra Points:
+
+1. Metadata filtering
+2. 🟢 Persistence to Disk
+3. Leader-Follower Architecture
+4. Python SDK Client
 
 ## Architecture
 
@@ -170,7 +210,10 @@ curl -X POST "http://localhost:8000/libraries/{library_id}/documents/" \
 **Semantic Search**
 
 ```bash
-curl -X GET "http://localhost:8000/search?query=transformer+architecture"
+curl --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"content":"Assiniboine"}' \
+  http://localhost:8000/search
 ```
 
 ## Project Structure
