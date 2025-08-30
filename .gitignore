@@ -1,3 +1,4 @@
+*.http
 *.sqlite
 *.txt
 .env
