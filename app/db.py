@@ -1,4 +1,5 @@
 import json
+import numpy as np
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -325,7 +326,19 @@ class VectorDB:
                     "character_count": chunk_len,
                     "embedding_model": self.embedder.model,
                     "embedding_dimension": len(embedding),
+                    "dtype": str(embedding.dtype),
                 },
             )
 
             chunk = self.create_chunk(chunk)
+
+    def search_similar(self, search_vector: list[float]):
+        query_np = np.array(search_vector).reshape(1, -1)
+        chunks = self.get_chunks()
+        vectors = np.array([np.frombuffer(chunk.embedding) for chunk in chunks])
+
+        similarities, indices = self.embedder.cosine_similarity(
+            np.squeeze(search_vector), np.squeeze(vectors)
+        )
+
+        return list(np.array(chunks)[indices])
