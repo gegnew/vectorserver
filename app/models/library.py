@@ -1,13 +1,21 @@
+import json
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class LibraryBase(BaseModel):
     name: str
-    description: str
-    documents: list[UUID]
-    metadata: dict
+    description: str | None = None
+    metadata: dict | None = None
+    created_at: datetime = Field(default=datetime.now(UTC))
+    updated_at: datetime | None = None
+
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def text_to_dict(cls, value: str) -> str:
+        return json.loads(value)
 
 
 class Library(LibraryBase):

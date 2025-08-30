@@ -1,20 +1,23 @@
+import json
 import sqlite3
 from pathlib import Path
+
+from app.models.library import Library
 
 _TABLES = """
 CREATE TABLE IF NOT EXISTS libraries (
     id TEXT PRIMARY KEY,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
     name TEXT NOT NULL,
     description TEXT,
-    metadata TEXT
+    metadata TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS documents (
     id TEXT PRIMARY KEY,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
+    updated_at TEXT,
     library_id TEXT NOT NULL,
     title TEXT NOT NULL,
     content TEXT,
@@ -25,7 +28,7 @@ CREATE TABLE IF NOT EXISTS documents (
 CREATE TABLE IF NOT EXISTS chunks (
     id TEXT PRIMARY KEY,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
+    updated_at TEXT,
     document_id TEXT NOT NULL,
     content TEXT NOT NULL,
     vector BLOB,
@@ -48,9 +51,30 @@ class VectorDB:
         )
 
         try:
+            self.conn.cursor().execute(
+                "PRAGMA foreign_keys = ON"
+            )  # necessary for each connection
             self.conn.cursor().executescript(_TABLES)
             self.conn.commit()
         except:
             self.conn.close()
             self.conn = None
             raise
+
+    def create_library(self, library: Library) -> Library:
+        self.conn.execute(
+            """
+            INSERT INTO libraries (id, name, description, created_at, updated_at, metadata)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(library.id),
+                library.name,
+                library.description,
+                library.created_at.timestamp(),
+                library.updated_at.timestamp() if library.updated_at else None,
+                json.dumps(library.metadata),
+            ),
+        )
+
+        return library
