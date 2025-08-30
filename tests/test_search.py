@@ -37,8 +37,7 @@ def docs_in_db(vdb):
             )
         )
 
-        chunks = vdb.process_and_store(doc)
-        return chunks
+        _ = vdb.process_and_store(doc)
 
 
 class TestSearch:
@@ -58,5 +57,5 @@ class TestSearch:
         created_doc = vdb.create_document(document)
         _, embedding, _ = Embedder().chunk_and_embed(created_doc.content)
 
-        similar = vdb._search_similar(embedding)
+        similar = vdb._flat_index(embedding)
         assert "Assiniboine" in similar[0].content

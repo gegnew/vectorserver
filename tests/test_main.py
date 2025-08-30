@@ -26,7 +26,7 @@ class TestRoutes:
 
     # TODO: implement other CRUD routes
 
-    def test_search_similar(self, client):
+    def test_semantic_search(self, client):
         search_data = {
             "content": """
             Healthcare

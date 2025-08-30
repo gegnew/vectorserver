@@ -41,14 +41,10 @@ class Embedder:
         return chunks, embeddings, chunk_lens
 
     def cosine_similarity(self, query, vectors, k: int = 5):
-        """cosine_sim = (A · B) / (||A|| * ||B||)"""
-
-        vectors = vectors.T
-        dot_product = np.dot(query, vectors)
-        magnitude_A = np.linalg.norm(query)
-        magnitude_B = np.linalg.norm(vectors)
-
-        sims = dot_product / (magnitude_A * magnitude_B)
+        sims = np.squeeze(
+            np.dot(query, vectors)
+            / (np.linalg.norm(query) * (np.linalg.norm(vectors))).T
+        )
 
         top_k_indices = np.argsort(sims)[::-1][:k]
         return sims[[top_k_indices]], top_k_indices

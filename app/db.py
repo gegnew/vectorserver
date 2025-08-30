@@ -311,7 +311,6 @@ class VectorDB:
     def process_and_store(self, document: Document):
         chunks, embeddings, chunk_lens = self.embedder.chunk_and_embed(document.content)
 
-        len(chunk_lens)
         for j, (chunk, embedding, chunk_len) in enumerate(
             zip(chunks, embeddings, chunk_lens, strict=False)
         ):
@@ -334,14 +333,12 @@ class VectorDB:
 
             chunk = self.create_chunk(chunk)
 
-    def _search_similar(self, search_vector: list[float]):
+    def _flat_index(self, search_vector: list[float]):
         np.array(search_vector).reshape(1, -1)
         chunks = self.get_chunks()
-        vectors = np.array([np.frombuffer(chunk.embedding) for chunk in chunks])
+        vectors = np.array([np.frombuffer(chunk.embedding) for chunk in chunks]).T
 
-        similarities, indices = self.embedder.cosine_similarity(
-            np.squeeze(search_vector), np.squeeze(vectors)
-        )
+        similarities, indices = self.embedder.cosine_similarity(search_vector, vectors)
 
         return list(np.array(chunks)[indices])
 
@@ -356,7 +353,7 @@ class VectorDB:
 
         created_doc = self.create_document(document)
         _, embedding, _ = Embedder().chunk_and_embed(created_doc.content)
-        chunk = self._search_similar(embedding)[0]
+        chunk = self._flat_index(embedding)[0]
         document = self.get_document(chunk.document_id)
         return document
 
