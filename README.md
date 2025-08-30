@@ -116,7 +116,7 @@ cd vectorserver
 
 ```env
 COHERE_API_KEY=your_cohere_api_key_here
-DB_PATH=data/vectordb.sqlite
+DB_PATH=data/dev.sqlite
 ```
 
 3. **Install dependencies**
