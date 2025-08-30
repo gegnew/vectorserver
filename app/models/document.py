@@ -1,12 +1,24 @@
+import json
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class DocumentBase(BaseModel):
-    name: str
-    chunks: list[UUID]
-    metadata: dict
+    title: str
+    content: str | None = None
+    metadata: dict | None = None
+    library_id: UUID
+    created_at: datetime = Field(default=datetime.now(UTC))
+    updated_at: datetime | None = None
+
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def text_to_dict(cls, value: str | dict | None) -> dict | None:
+        if isinstance(value, str):
+            return json.loads(value)
+        return value
 
 
 class Document(DocumentBase):
