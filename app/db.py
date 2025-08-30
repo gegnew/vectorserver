@@ -1,6 +1,8 @@
 import json
 import sqlite3
 from pathlib import Path
+from uuid import UUID
+from datetime import datetime
 
 from app.models.library import Library
 
@@ -10,14 +12,14 @@ CREATE TABLE IF NOT EXISTS libraries (
     name TEXT NOT NULL,
     description TEXT,
     metadata TEXT,
-    created_at TEXT NOT NULL,
-    updated_at TEXT
+    created_at INT NOT NULL,
+    updated_at INT
 );
 
 CREATE TABLE IF NOT EXISTS documents (
     id TEXT PRIMARY KEY,
-    created_at TEXT NOT NULL,
-    updated_at TEXT,
+    created_at INT NOT NULL,
+    updated_at INT,
     library_id TEXT NOT NULL,
     title TEXT NOT NULL,
     content TEXT,
@@ -27,8 +29,8 @@ CREATE TABLE IF NOT EXISTS documents (
 
 CREATE TABLE IF NOT EXISTS chunks (
     id TEXT PRIMARY KEY,
-    created_at TEXT NOT NULL,
-    updated_at TEXT,
+    created_at INT NOT NULL,
+    updated_at INT,
     document_id TEXT NOT NULL,
     content TEXT NOT NULL,
     vector BLOB,
@@ -78,3 +80,49 @@ class VectorDB:
         )
 
         return library
+
+    def get_library(self, library_id: UUID) -> Library | None:
+        row = self.conn.execute(
+            "SELECT id, name, description, created_at, updated_at, metadata FROM libraries WHERE id = ?",
+            (str(library_id),),
+        ).fetchone()
+
+        if not row:
+            return None
+
+        return Library(
+            id=UUID(row[0]),
+            name=row[1],
+            description=row[2],
+            created_at=datetime.fromtimestamp(row[3]),
+            updated_at=datetime.fromtimestamp(row[4]) if row[4] else None,
+            metadata=row[5],
+        )
+
+    def list_libraries(self) -> list[Library]:
+        cursor = self.conn.execute(
+            "SELECT id, name, description, created_at, updated_at, metadata FROM libraries"
+        )
+
+        libraries = []
+        for row in cursor.fetchall():
+            libraries.append(
+                Library(
+                    id=UUID(row[0]),
+                    name=row[1],
+                    description=row[2],
+                    created_at=datetime.fromtimestamp(row[3]),
+                    updated_at=datetime.fromtimestamp(row[4]) if row[4] else None,
+                    metadata=row[5],
+                )
+            )
+
+        return libraries
+
+    def delete_library(self, library_id: UUID) -> bool:
+        cursor = self.conn.execute(
+            "DELETE FROM libraries WHERE id = ?", (str(library_id),)
+        )
+        deleted = cursor.rowcount > 0
+
+        return deleted
