@@ -13,5 +13,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
+    cohere_api_key: str | None = None
+
 
 settings = Settings()

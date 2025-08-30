@@ -1,6 +1,8 @@
 from app.models.chunk import Chunk
 from app.models.document import Document
 from app.models.library import Library
+from pathlib import Path
+from app.utils.load_documents import load_documents_from_directory
 
 
 class TestLibraryCrud:
@@ -88,3 +90,39 @@ class TestChunkCrud:
         assert "Test Delete chunk content" not in [
             chunk.content for chunk in post_del_chunks
         ]
+
+
+class TestCreateEmbeddings:
+    def test_create_embeddings(self, vdb):
+        docs_dir = Path("tests/docs/")
+        library = vdb.create_library(
+            Library(
+                name="Test Document Library",
+                description="Library containing test documents for chunking and embedding",
+                metadata={
+                    "source": "test_documents",
+                    "processed_by": "pytest",
+                },
+            )
+        )
+
+        documents = load_documents_from_directory(docs_dir)
+
+        for doc_name, content in documents:
+            doc = vdb.create_document(
+                Document(
+                    title=doc_name,
+                    content=content,
+                    library_id=library.id,
+                    metadata={
+                        "original_length": len(content),
+                        "source_file": f"{doc_name}.txt",
+                    },
+                )
+            )
+
+            chunks = vdb.process_and_store(doc)
+
+        all_chunks = vdb.get_chunks()
+        assert len(documents) == 2
+        assert len(all_chunks) == 29  # obviously not a great test

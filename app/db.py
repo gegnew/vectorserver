@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
+from app.embeddings import Embedder
 from app.models.chunk import Chunk
 from app.models.document import Document
 from app.models.library import Library
@@ -33,7 +34,7 @@ CREATE TABLE IF NOT EXISTS chunks (
     id TEXT PRIMARY KEY,
     document_id TEXT NOT NULL,
     content TEXT NOT NULL,
-    embedding TEXT,
+    embedding BLOB,
     metadata TEXT,
     created_at INT NOT NULL,
     updated_at INT,
@@ -45,6 +46,7 @@ CREATE TABLE IF NOT EXISTS chunks (
 class VectorDB:
     def __init__(self, db_path: str = "data/vectordb.sqlite"):
         self.db_path = db_path
+        self.embedder = Embedder()
 
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
@@ -249,6 +251,30 @@ class VectorDB:
             metadata=json.loads(row[6]) if row[6] else None,
         )
 
+    def get_chunks(self, document_id: UUID | None = None) -> list[Chunk] | None:
+        sql = """
+        SELECT id, content, document_id, created_at, updated_at, embedding,
+        metadata FROM chunks
+        """
+        params = []
+        if document_id:
+            sql += " WHERE document_id = ?"
+            params += [document_id]
+        res = self.conn.execute(sql, params).fetchall()
+
+        return [
+            Chunk(
+                id=UUID(row[0]),
+                content=row[1],
+                document_id=UUID(row[2]),
+                created_at=datetime.fromtimestamp(row[3]),
+                updated_at=datetime.fromtimestamp(row[4]) if row[4] else None,
+                embedding=row[5],
+                metadata=json.loads(row[6]) if row[6] else None,
+            )
+            for row in res
+        ]
+
     def list_chunks(self) -> list[Chunk]:
         cursor = self.conn.execute(
             """
@@ -278,3 +304,28 @@ class VectorDB:
         deleted = cursor.rowcount > 0
 
         return deleted
+
+    def process_and_store(self, document: Document):
+        chunks, embeddings, chunk_lens = self.embedder.chunk_and_embed(document.content)
+
+        total_chunks = len(chunk_lens)
+        for j, (chunk, embedding, chunk_len) in enumerate(
+            zip(chunks, embeddings, chunk_lens)
+        ):
+
+            embedding_bytes = embedding.tobytes()
+
+            chunk = Chunk(
+                content=chunk,
+                document_id=document.id,
+                embedding=embedding_bytes,
+                metadata={
+                    "chunk_number": j,
+                    "total_chunks": len(chunks),
+                    "character_count": chunk_len,
+                    "embedding_model": self.embedder.model,
+                    "embedding_dimension": len(embedding),
+                },
+            )
+
+            chunk = self.create_chunk(chunk)

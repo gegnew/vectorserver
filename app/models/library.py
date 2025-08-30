@@ -14,8 +14,12 @@ class LibraryBase(BaseModel):
 
     @field_validator("metadata", mode="before")
     @classmethod
-    def text_to_dict(cls, value: str) -> str:
-        return json.loads(value)
+    def text_to_dict(cls, value: str | dict) -> str:
+        match value:
+            case str():
+                return json.loads(value)
+            case dict():
+                return value
 
 
 class Library(LibraryBase):
