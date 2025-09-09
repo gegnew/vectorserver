@@ -26,7 +26,7 @@ class TestRoutes:
 
     # TODO: implement other CRUD routes
 
-    def test_semantic_search(self, client):
+    def test_semantic_search(self, client, service_with_documents):
         search_data = {
             "content": """
             Healthcare

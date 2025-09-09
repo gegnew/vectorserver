@@ -1,8 +1,7 @@
-from pathlib import Path
 import sqlite3
+from pathlib import Path
 
 from app.settings import settings
-
 
 _TABLES = """
 CREATE TABLE IF NOT EXISTS libraries (

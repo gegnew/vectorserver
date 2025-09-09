@@ -3,16 +3,21 @@ from collections.abc import Sequence
 from typing import TypeVar
 from uuid import UUID
 
+from app.repositories.db import DB
+
 T = TypeVar("T")
 
 
 class BaseRepository[T](ABC):
+    def __init__(self, db: DB) -> None:
+        self.db = db
+
     @abstractmethod
     def create(self, entity: T) -> T:
         raise NotImplementedError()
 
     @abstractmethod
-    def find(self, _id: UUID) -> T:
+    def find(self, _id: UUID) -> T | None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -20,9 +25,9 @@ class BaseRepository[T](ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def update(self, entity: T) -> T:
+    def update(self, entity: T) -> T | None:
         raise NotImplementedError()
 
     @abstractmethod
-    def delete(self, _id: UUID) -> T:
+    def delete(self, _id: UUID) -> int:
         raise NotImplementedError()
