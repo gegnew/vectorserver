@@ -76,11 +76,11 @@ class LibraryService:
         documents = self.docs.find_by_library(id)
         return documents
 
-    def update(self):
-        raise NotImplementedError
+    def update(self, lib: Library):
+        return self.libraries.update(lib)
 
-    def delete(self):
-        raise NotImplementedError
+    def delete(self, id: UUID):
+        return self.libraries.delete(id)
 
     def search(self, search_str: str, id: UUID | None):
         embedding = self.embedder.embed((search_str,))

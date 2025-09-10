@@ -24,7 +24,28 @@ class TestRoutes:
         assert data["description"] == library_data["description"]
         assert "id" in data
 
-    # TODO: implement other CRUD routes
+    def test_update_library(self, client):
+        library_data = {
+            "name": "Test library",
+            "description": "A test library",
+        }
+        lib = client.post("/libraries", json=library_data).json()
+        lib["name"] = "Updated Test Library"
+
+        response = client.post("/libraries", json=lib)
+        assert response.status_code == 201
+        assert response.json()["name"] == "Updated Test Library"
+
+    def test_delete_library(self, client):
+        library_data = {
+            "name": "Test library",
+            "description": "A test library",
+        }
+        lib = client.post("/libraries", json=library_data).json()
+
+        response = client.delete("/libraries", params={"id": lib["id"]})
+        assert response.status_code == 202
+        assert response.json()["deleted"] == 1
 
     def test_semantic_search(self, client, service_with_documents):
         search_data = {
