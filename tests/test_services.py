@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from app.library_service import LibraryService
+from app.models.library import Library, LibraryCreate
 from app.repositories.db import DB
 
 # TODO: move this to conftest
@@ -24,18 +25,18 @@ class TestLibraryService:
     def test_create_library(self):
         service = LibraryService()
 
-        service.create(name="Test Library")
-
         docs_dir = Path("tests/docs/")
         library = service.create(
-            name="Test Document Library",
-            description="""
+            Library(
+                name="Test Document Library",
+                description="""
                     Library containing test documents for chunking and embedding
                     """,
-            metadata={
-                "source": "test_documents",
-                "processed_by": "pytest",
-            },
+                metadata={
+                    "source": "test_documents",
+                    "processed_by": "pytest",
+                },
+            )
         )
 
         documents = load_documents_from_directory(docs_dir)

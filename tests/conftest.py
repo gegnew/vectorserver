@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.library_service import LibraryService
 from app.main import app
+from app.models.library import Library
 from app.utils.load_documents import load_documents_from_directory
 
 
@@ -14,21 +15,26 @@ def client():
     return client
 
 
-@pytest.fixture
+@pytest.fixture(scope="class")
 def service_with_documents():
-    """Add documents to the database for testing"""
+    """Add documents to the database for testing.
+
+    Spins up and down for each class; this is a bit slow, but we can optimize it later.
+    """
     service = LibraryService()
 
     docs_dir = Path("tests/docs/")
     library = service.create(
-        name="Test Document Library",
-        description="""
+        Library(
+            name="Test Document Library",
+            description="""
                 Library containing test documents for chunking and embedding
                 """,
-        metadata={
-            "source": "test_documents",
-            "processed_by": "pytest",
-        },
+            metadata={
+                "source": "test_documents",
+                "processed_by": "pytest",
+            },
+        )
     )
 
     documents = load_documents_from_directory(docs_dir)

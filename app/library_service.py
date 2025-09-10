@@ -24,12 +24,7 @@ class LibraryService:
         self.chunks = ChunkRepository(self.db)
         self.embedder = Embedder()
 
-    def create(
-        self, name: str, description: str = "", metadata: dict = None
-    ) -> Library:
-        if metadata is None:
-            metadata = {}
-        lib = Library(name=name, description=description, metadata=metadata)
+    def create(self, lib: Library) -> Library:
         return self.libraries.create(lib)
 
     def add_document(

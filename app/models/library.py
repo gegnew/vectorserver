@@ -9,8 +9,6 @@ class LibraryBase(BaseModel):
     name: str
     description: str | None = None
     metadata: dict | None = None
-    created_at: datetime = Field(default=datetime.now(UTC))
-    updated_at: datetime | None = None
 
     @field_validator("metadata", mode="before")
     @classmethod
@@ -24,6 +22,8 @@ class LibraryBase(BaseModel):
 
 class Library(LibraryBase):
     id: UUID = Field(default_factory=uuid4)
+    created_at: datetime = Field(default=datetime.now(UTC))
+    updated_at: datetime | None = None
 
 
 class LibraryGet(LibraryBase):
