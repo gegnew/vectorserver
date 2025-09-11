@@ -47,3 +47,18 @@ async def delete_library(
 ):
     deleted = service.delete(id)
     return {"deleted": deleted}
+
+
+@router.post("/{library_id}/documents", status_code=status.HTTP_201_CREATED)
+async def add_document_to_library(
+    library_id: UUID,
+    document_data: dict,
+    service: LibraryService = Depends(get_library_service),
+):
+    chunks = service.add_document(
+        library_id=library_id,
+        title=document_data["title"],
+        content=document_data["content"],
+        metadata=document_data.get("metadata", {}),
+    )
+    return {"chunks_created": len(chunks)}

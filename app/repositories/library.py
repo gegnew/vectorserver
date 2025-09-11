@@ -60,7 +60,6 @@ class LibraryRepository(BaseRepository[Library]):
         return [self.to_entity(row) for row in cursor.fetchall()]
 
     def update(self, entity: Library) -> Library | None:
-
         res = self.db.conn.execute(
             """
             UPDATE libraries
