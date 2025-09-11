@@ -1,6 +1,5 @@
+from typing import Literal
 from uuid import UUID
-
-import numpy as np
 
 from app.embeddings import Embedder
 from app.models.chunk import Chunk
@@ -10,7 +9,7 @@ from app.repositories.chunk import ChunkRepository
 from app.repositories.db import get_db
 from app.repositories.document import DocumentRepository
 from app.repositories.library import LibraryRepository
-from app.utils.ivf import IVF
+from app.repositories.vector_index import FlatIndexRepository, IVFIndexRepository
 
 
 def get_library_service():
@@ -20,10 +19,12 @@ def get_library_service():
 class LibraryService:
     def __init__(self):
         self.db = get_db()
+        self.embedder = Embedder()
         self.libraries = LibraryRepository(self.db)
         self.docs = DocumentRepository(self.db)
         self.chunks = ChunkRepository(self.db)
-        self.embedder = Embedder()
+        self.flat_index = FlatIndexRepository()
+        self.ivf_index = IVFIndexRepository()
 
     def create(self, lib: Library) -> Library:
         return self.libraries.create(lib)
@@ -88,10 +89,8 @@ class LibraryService:
         search_str: str,
         id: UUID,
         index_type: Literal["flat", "ivf"] = "flat",
-    ):
-
+    ) -> Document | None:
         embedding = self.embedder.embed([search_str])[0]
-
         chunks = self.chunks.find_by_library(id)
 
         if not chunks:
@@ -99,11 +98,11 @@ class LibraryService:
 
         match index_type:
             case "ivf":
-                pass
+                self.ivf_index.fit_chunks(chunks)
+                similar_chunks = self.ivf_index.search_chunks(embedding, k=1)
             case "flat":
                 self.flat_index.fit_chunks(chunks)
                 similar_chunks = self.flat_index.search_chunks(embedding, k=1)
 
-                if similar_chunks:
-                    return self.docs.find(similar_chunks[0].document_id)
-                return None
+        if similar_chunks:
+            return self.docs.find(similar_chunks[0].document_id)

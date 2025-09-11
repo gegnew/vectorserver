@@ -1,19 +1,12 @@
 from pathlib import Path
-from uuid import uuid4
 
-import numpy as np
 import pytest
 
-from app.models.chunk import Chunk
 from app.models.library import Library
 from app.repositories.db import DB
 from app.services.library_service import LibraryService
-
-from app.services.vector_index_service import VectorIndexService
 from app.settings import settings
 from app.utils.load_documents import load_documents_from_directory
-
-from tests.conftest import create_test_chunk
 
 # TODO: move this to conftest
 settings.db_path = "data/test.sqlite"
@@ -89,46 +82,15 @@ class TestLibraryService:
         assert "Assiniboine" in similar.content
 
     def test_create_ivf_index(self, service_with_documents):
-        service_with_documents.find_all()[-1]
+        lib = service_with_documents.find_all()[-1]
 
-        search_str = """
-        like the north face of Mount Assiniboine and the Emperor Face of
-        Mount Robson
-        """
+        similar = service_with_documents.search(
+            search_str="""
+            like the north face of Mount Assiniboine and the Emperor Face of
+            Mount Robson
+            """,
+            id=lib.id,
+            index_type="ivf",
+        )
 
-        service_with_documents.index(search_str)
-
-
-class TestVectorIndexService:
-    def test_service_with_flat_repository(self):
-        service = VectorIndexService(index_type="flat")
-        chunks = [create_test_chunk(i) for i in range(10)]
-
-        service.fit(chunks)
-        query = np.random.random(128)
-        results = service.search(query, k=5)
-
-        assert len(results) == 5
-        assert all(isinstance(chunk, Chunk) for chunk in results)
-
-    def test_operations(self):
-        service = VectorIndexService(index_type="flat")
-        initial_chunks = [create_test_chunk(i) for i in range(5)]
-
-        # Fit initial chunks
-        service.fit(initial_chunks)
-
-        # Add chunks
-        new_chunks = [create_test_chunk(i + 5) for i in range(3)]
-        service.add_chunks(new_chunks)
-
-        # Remove chunks
-        chunk_ids_to_remove = [initial_chunks[0].id]
-        service.remove_chunks(chunk_ids_to_remove)
-
-        query = np.random.random(128)
-        results = service.search(query, k=10)
-        result_ids = [chunk.id for chunk in results]
-
-        assert initial_chunks[0].id not in result_ids
-        assert len(results) == 7  # 5 + 3 - 1
+        assert "Assiniboine" in similar.content

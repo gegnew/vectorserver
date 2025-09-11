@@ -12,7 +12,7 @@ from app.repositories.document import DocumentRepository
 from app.repositories.library import LibraryRepository
 
 # TODO: move this to conftest
-from app.repositories.vector_index import FlatIndexRepository
+from app.repositories.vector_index import FlatIndexRepository, IVFIndexRepository
 from app.settings import settings
 from tests.conftest import create_test_chunk
 
@@ -153,8 +153,6 @@ class TestChunkRepository:
         assert deleted == 1
 
 
-
-
 @pytest.fixture
 def flat_index_repository():
     yield FlatIndexRepository()
@@ -202,3 +200,35 @@ class TestFlatIndexRepository:
         for chunk_id in chunk_ids_to_remove:
             assert chunk_id not in result_ids
         assert len(results) == 8
+
+
+class TestIVFIndexRepository:
+    def test_fit_and_search(self):
+        chunks = [create_test_chunk(i) for i in range(50)]
+        repo = IVFIndexRepository(n_partitions=5)
+
+        repo.fit_chunks(chunks)
+        query = np.random.random(128)
+        results = repo.search_chunks(query, k=10)
+
+        assert len(results) <= 10
+        assert all(isinstance(chunk, Chunk) for chunk in results)
+
+    def test_chunk_crud(self):
+        initial_chunks = [create_test_chunk(i) for i in range(20)]
+        repo = IVFIndexRepository(n_partitions=3)
+        repo.fit_chunks(initial_chunks)
+
+        # add chunks
+        new_chunks = [create_test_chunk(i + 20) for i in range(5)]
+        repo.add_chunks(new_chunks)
+
+        # remove chunks
+        chunk_ids_to_remove = [initial_chunks[0].id]
+        repo.remove_chunks(chunk_ids_to_remove)
+
+        query = np.random.random(128)
+        results = repo.search_chunks(query, k=25)
+        result_ids = [chunk.id for chunk in results]
+
+        assert initial_chunks[0].id not in result_ids

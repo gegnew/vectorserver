@@ -1,3 +1,6 @@
+import pytest
+
+
 class TestMain:
     def test_root(self, client):
         response = client.get("/")
@@ -47,7 +50,14 @@ class TestRoutes:
         assert response.status_code == 202
         assert response.json()["deleted"] == 1
 
-    def test_semantic_search(self, client, service_with_documents):
+    @pytest.mark.parametrize("index_type", ["flat", "ivf"])
+    def test_semantic_search(self, client, index_type, service_with_documents):
+        """Test IVF and flat index
+
+        # TODO: for some reason this test fails when the whole test suite runs
+        """
+        lib = client.get("/libraries").json()[0]["id"]
+
         search_data = {
             "content": """
             Healthcare
@@ -55,7 +65,9 @@ class TestRoutes:
             - Drug discovery and development
             - Personalized treatment recommendations
             - Epidemic prediction and tracking
-            """
+            """,
+            "index_type": index_type,
+            "library_id": lib,
         }
         response = client.post("/search", json=search_data)
         assert response.status_code == 200

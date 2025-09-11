@@ -2,10 +2,25 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
-from app.services.library_service import LibraryService, get_library_service
 from app.models.library import Library, LibraryCreate, LibraryUpdate
+from app.services.library_service import LibraryService, get_library_service
 
 router = APIRouter(prefix="/libraries", tags=["libraries"])
+
+
+@router.get("", response_model=list[Library], status_code=status.HTTP_200_OK)
+async def get_libraries(
+    service: LibraryService = Depends(get_library_service),
+):
+    return service.find_all()
+
+
+@router.get("/{id}", response_model=Library, status_code=status.HTTP_200_OK)
+async def get_library(
+    id: UUID,
+    service: LibraryService = Depends(get_library_service),
+):
+    return service.get_library(id)
 
 
 @router.post("", response_model=Library, status_code=status.HTTP_201_CREATED)
