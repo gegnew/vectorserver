@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class ChunkBase(BaseModel):
     content: str
-    embedding: bytes | None = None
+    embedding: bytes
     metadata: dict | None = None
     document_id: UUID
     created_at: datetime = Field(default=datetime.now(UTC))

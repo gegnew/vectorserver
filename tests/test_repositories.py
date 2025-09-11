@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from app.models.chunk import Chunk
@@ -51,7 +52,13 @@ def doc(lib, docs):
 
 @pytest.fixture
 def chunk(doc, chunks):
-    yield chunks.create(Chunk(content="test chunk", document_id=doc.id))
+    yield chunks.create(
+        Chunk(
+            content="test chunk",
+            embedding=np.random.random(10).astype(np.float32).tobytes(),
+            document_id=doc.id,
+        )
+    )
 
 
 class TestLibraryRepository:
