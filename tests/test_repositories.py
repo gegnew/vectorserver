@@ -179,3 +179,20 @@ class TestFlatIndexRepository:
 
         assert len(results) == 3
         assert all(isinstance(chunk, Chunk) for chunk in results)
+
+    def test_empty_chunks(self, flat_index_repository):
+        query = np.random.random(128).astype(np.float32)
+        results = flat_index_repository.search_chunks(query, k=5)
+
+        assert results == []
+
+    def test_add_chunks(self, flat_index_repository):
+        initial_chunks = [create_test_chunk(i) for i in range(5)]
+        flat_index_repository.fit_chunks(initial_chunks)
+
+        new_chunks = [create_test_chunk(i + 5) for i in range(3)]
+        flat_index_repository.add_chunks(new_chunks)
+
+        query = np.random.random(128).astype(np.float32)
+        results = flat_index_repository.search_chunks(query, k=8)
+        assert len(results) == 8

@@ -47,7 +47,19 @@ class FlatIndexRepository(VectorIndexRepository):
         )
 
     def add_chunks(self, chunks: list[Chunk]):
-        pass
+        start_index = len(self._chunks)
+        self._chunks.extend(chunks)
+
+        # Update mappings
+        for i, chunk in enumerate(chunks):
+            self._chunk_to_index_map[chunk.id] = start_index + i
+
+        new_vectors = self._chunks_to_vectors(chunks)
+        new_processed_vectors = self.flat_index.fit(new_vectors)
+        if self._vectors is None:
+            self._vectors = new_processed_vectors
+        else:
+            self._vectors = np.hstack([self._vectors, new_processed_vectors])
 
     def remove_chunks(self, chunk_ids: list[UUID]):
         pass
