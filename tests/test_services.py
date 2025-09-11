@@ -82,11 +82,11 @@ class TestLibraryService:
         assert "Assiniboine" in similar.content
 
     def test_create_ivf_index(self, service_with_documents):
-        lib = service_with_documents.find_all()[-1]
+        service_with_documents.find_all()[-1]
 
         search_str = """
         like the north face of Mount Assiniboine and the Emperor Face of
         Mount Robson
         """
 
-        res = service_with_documents.index(search_str)
+        service_with_documents.index(search_str)

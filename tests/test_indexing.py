@@ -15,7 +15,7 @@ class TestIndexing:
 
         query = np.array([0.1, 0.1])  # close to cluster1
 
-        ivf = IVF(n_partitions=6)
+        ivf = IVF(n_clusters=6)
         ivf.fit(dataset)
         ivf.create_index(dataset)
         result = ivf.search(query)
@@ -38,7 +38,7 @@ class TestIndexing:
         query_term = "london"
         query = eb.embed([query_term])
 
-        ivf = IVF(n_partitions=3)
+        ivf = IVF(n_clusters=3)
         ivf.fit(embeddings)
         ivf.create_index(embeddings)
         res = ivf.search(query[0])
