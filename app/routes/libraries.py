@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
-from app.library_service import LibraryService, get_library_service
+from app.services.library_service import LibraryService, get_library_service
 from app.models.library import Library, LibraryCreate, LibraryUpdate
 
 router = APIRouter(prefix="/libraries", tags=["libraries"])

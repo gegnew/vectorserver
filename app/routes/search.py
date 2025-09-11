@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 
-from app.library_service import LibraryService, get_library_service
+from app.services.library_service import LibraryService, get_library_service
 from app.models.document import Document
 from app.models.models import SearchText
 

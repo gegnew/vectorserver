@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from app.library_service import LibraryService
+from app.services.library_service import LibraryService
 from app.models.library import Library
 from app.repositories.db import DB
 

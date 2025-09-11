@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from app.library_service import LibraryService
+from app.services.library_service import LibraryService
 from app.main import app
 from app.models.library import Library
 from app.utils.load_documents import load_documents_from_directory

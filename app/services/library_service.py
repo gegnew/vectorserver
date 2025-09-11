@@ -92,7 +92,7 @@ class LibraryService:
         ivf = IVF()
         # TODO: split the kmeans logic out and do this only once with IVF
         ivf.fit(vectors)
-        ix = ivf.create_index(vectors)
+        ivf.create_index(vectors)
         result = ivf.search(query.reshape(-1, 1))
         return [chunks[i].content for i in result]
 
