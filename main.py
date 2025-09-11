@@ -11,6 +11,8 @@ def main():
         port=settings.port,
         reload=settings.debug,
         log_level="debug" if settings.debug else "info",
+        reload_excludes=[".venv"],
+        reload_dirs=["app/"],
     )
 
 
