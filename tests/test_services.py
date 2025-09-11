@@ -109,3 +109,25 @@ class TestVectorIndexService:
 
         assert len(results) == 5
         assert all(isinstance(chunk, Chunk) for chunk in results)
+
+    def test_operations(self):
+        service = VectorIndexService(index_type="flat")
+        initial_chunks = [create_test_chunk(i) for i in range(5)]
+
+        # Fit initial chunks
+        service.fit(initial_chunks)
+
+        # Add chunks
+        new_chunks = [create_test_chunk(i + 5) for i in range(3)]
+        service.add_chunks(new_chunks)
+
+        # Remove chunks
+        chunk_ids_to_remove = [initial_chunks[0].id]
+        service.remove_chunks(chunk_ids_to_remove)
+
+        query = np.random.random(128).astype(np.float32)
+        results = service.search(query, k=10)
+        result_ids = [chunk.id for chunk in results]
+
+        assert initial_chunks[0].id not in result_ids
+        assert len(results) == 7  # 5 + 3 - 1

@@ -32,3 +32,9 @@ class VectorIndexService:
 
     def search(self, query_vector: np.ndarray, k: int = 5) -> list[Chunk]:
         return self._repository.search_chunks(query_vector, k)
+
+    def add_chunks(self, new_chunks: list[Chunk]):
+        self._repository.add_chunks(new_chunks)
+
+    def remove_chunks(self, chunk_ids: list[UUID]):
+        self._repository.remove_chunks(chunk_ids)
