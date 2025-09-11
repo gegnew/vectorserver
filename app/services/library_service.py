@@ -83,33 +83,27 @@ class LibraryService:
     def delete(self, id: UUID):
         return self.libraries.delete(id)
 
-    def index(self, query: str):
-        # TODO: move this
-        query = self.embedder.embed([query])[0].T
+    def search(
+        self,
+        search_str: str,
+        id: UUID,
+        index_type: Literal["flat", "ivf"] = "flat",
+    ):
 
-        chunks = self.chunks.find_all()
-        vectors = np.array([np.frombuffer(chunk.embedding) for chunk in chunks])
-        ivf = IVF()
-        # TODO: split the kmeans logic out and do this only once with IVF
-        ivf.fit(vectors)
-        ivf.create_index(vectors)
-        result = ivf.search(query.reshape(-1, 1))
-        return [chunks[i].content for i in result]
+        embedding = self.embedder.embed([search_str])[0]
 
-    def search(self, search_str: str, id: UUID | None):
-        embedding = self.embedder.embed((search_str,))
-        if id:
-            chunks = self.chunks.find_by_library(id)
-        else:
-            chunks = self.chunks.find_all()
-        similar = self._flat_index(embedding, chunks)
-        # TODO: be more clever than top-1 results
-        return self.docs.find(similar[0].document_id)
+        chunks = self.chunks.find_by_library(id)
 
-    def _flat_index(
-        self, search_vector: list[float], chunks: list[Chunk]
-    ) -> list[Chunk]:
-        search_vector = np.array(search_vector).reshape(1, -1)
-        vectors = np.array([np.frombuffer(chunk.embedding) for chunk in chunks]).T
-        similarities, indices = self.embedder.cosine_similarity(search_vector, vectors)
-        return list(np.array(chunks)[indices])
+        if not chunks:
+            return None
+
+        match index_type:
+            case "ivf":
+                pass
+            case "flat":
+                self.flat_index.fit_chunks(chunks)
+                similar_chunks = self.flat_index.search_chunks(embedding, k=1)
+
+                if similar_chunks:
+                    return self.docs.find(similar_chunks[0].document_id)
+                return None

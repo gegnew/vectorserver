@@ -74,7 +74,7 @@ class TestLibraryService:
         }
         assert chunks[1].metadata["chunk_number"] == 1
 
-    def test_search_similar(self, service_with_documents):
+    def test_search_flat_index(self, service_with_documents):
         lib = service_with_documents.find_all()[-1]
 
         similar = service_with_documents.search(
@@ -83,6 +83,7 @@ class TestLibraryService:
             Mount Robson
             """,
             id=lib.id,
+            index_type="flat",
         )
 
         assert "Assiniboine" in similar.content
@@ -104,7 +105,7 @@ class TestVectorIndexService:
         chunks = [create_test_chunk(i) for i in range(10)]
 
         service.fit(chunks)
-        query = np.random.random(128).astype(np.float32)
+        query = np.random.random(128)
         results = service.search(query, k=5)
 
         assert len(results) == 5
@@ -125,7 +126,7 @@ class TestVectorIndexService:
         chunk_ids_to_remove = [initial_chunks[0].id]
         service.remove_chunks(chunk_ids_to_remove)
 
-        query = np.random.random(128).astype(np.float32)
+        query = np.random.random(128)
         results = service.search(query, k=10)
         result_ids = [chunk.id for chunk in results]
 

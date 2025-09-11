@@ -1,5 +1,4 @@
 from pathlib import Path
-from uuid import uuid4
 
 import numpy as np
 import pytest
@@ -15,6 +14,7 @@ from app.repositories.library import LibraryRepository
 # TODO: move this to conftest
 from app.repositories.vector_index import FlatIndexRepository
 from app.settings import settings
+from tests.conftest import create_test_chunk
 
 settings.db_path = "data/test.sqlite"
 
@@ -57,7 +57,7 @@ def chunk(doc, chunks):
     yield chunks.create(
         Chunk(
             content="test chunk",
-            embedding=np.random.random(10).astype(np.float32).tobytes(),
+            embedding=np.random.random(10).tobytes(),
             document_id=doc.id,
         )
     )
@@ -153,15 +153,6 @@ class TestChunkRepository:
         assert deleted == 1
 
 
-def create_test_chunk(i: int, embedding_dim: int = 128) -> Chunk:
-    """Helper to create test chunks"""
-    embedding = np.random.random(embedding_dim).astype(np.float32)
-    return Chunk(
-        id=uuid4(),
-        content=f"test content {i}",
-        document_id=uuid4(),
-        embedding=embedding.tobytes(),
-    )
 
 
 @pytest.fixture
@@ -174,14 +165,14 @@ class TestFlatIndexRepository:
         chunks = [create_test_chunk(i) for i in range(5)]
 
         flat_index_repository.fit_chunks(chunks)
-        query = np.random.random(128).astype(np.float32)
+        query = np.random.random(128)
         results = flat_index_repository.search_chunks(query, k=3)
 
         assert len(results) == 3
         assert all(isinstance(chunk, Chunk) for chunk in results)
 
     def test_empty_chunks(self, flat_index_repository):
-        query = np.random.random(128).astype(np.float32)
+        query = np.random.random(128)
         results = flat_index_repository.search_chunks(query, k=5)
 
         assert results == []
@@ -193,7 +184,7 @@ class TestFlatIndexRepository:
         new_chunks = [create_test_chunk(i + 5) for i in range(3)]
         flat_index_repository.add_chunks(new_chunks)
 
-        query = np.random.random(128).astype(np.float32)
+        query = np.random.random(128)
         results = flat_index_repository.search_chunks(query, k=8)
         assert len(results) == 8
 
@@ -204,7 +195,7 @@ class TestFlatIndexRepository:
         chunk_ids_to_remove = [chunks[0].id, chunks[1].id]
         flat_index_repository.remove_chunks(chunk_ids_to_remove)
 
-        query = np.random.random(128).astype(np.float32)
+        query = np.random.random(128)
         results = flat_index_repository.search_chunks(query, k=10)
         result_ids = [chunk.id for chunk in results]
 

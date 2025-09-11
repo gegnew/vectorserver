@@ -56,7 +56,7 @@ def service_with_documents():
 
 
 def create_test_chunk(i: int, embedding_dim: int = 128) -> Chunk:
-    embedding = np.random.random(embedding_dim).astype(np.float32)
+    embedding = np.random.random(embedding_dim)
     return Chunk(
         id=uuid4(),
         content=f"test content {i}",
