@@ -1,11 +1,14 @@
 from pathlib import Path
+from uuid import uuid4
 
+import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from app.services.library_service import LibraryService
 from app.main import app
+from app.models.chunk import Chunk
 from app.models.library import Library
+from app.services.library_service import LibraryService
 from app.utils.load_documents import load_documents_from_directory
 
 
@@ -50,3 +53,13 @@ def service_with_documents():
             },
         )
     return service
+
+
+def create_test_chunk(i: int, embedding_dim: int = 128) -> Chunk:
+    embedding = np.random.random(embedding_dim).astype(np.float32)
+    return Chunk(
+        id=uuid4(),
+        content=f"test content {i}",
+        document_id=uuid4(),
+        embedding=embedding.tobytes(),
+    )
