@@ -7,6 +7,8 @@ class IVF:
         self.ix = [[] for _ in range(self.n_partitions + 1)]
         self.max_iters = max_iters
         self.centroids = None
+        self.is_fit = False
+        self.labels = None
 
     def fit(self, X):
         ix = np.random.choice(len(X), self.n_partitions, replace=False)
@@ -23,7 +25,8 @@ class IVF:
             if np.all(self.centroids == new_centroids):
                 break
             self.centroids = new_centroids
-        return labels
+        self.is_fit = True
+        self.labels = labels
 
     def predict(self, y):
         distances = self._calculate_distances(y)
@@ -37,21 +40,27 @@ class IVF:
             distances[:, i] = np.linalg.norm(diff, axis=1)
         return distances
 
-    def search(self, dataset, query):
+    def create_index(self, dataset):
         # Fit the dataset and get cluster assignments
-        labels = self.fit(dataset)
+        if not self.is_fit:
+            self.fit(dataset)
 
         # Build index - group vector indices by their cluster assignment
         index = {i: [] for i in range(self.n_partitions)}
-        for i, label in enumerate(labels):
+        for i, label in enumerate(self.labels):
             index[label].append(i)
+        self.index = index
+        return self.index
 
+    def search(self, query):
+        # Ensure query is 1D vector for distance calculation
+        if query.ndim > 1:
+            query = query.flatten()
+        
         # Coarse search - find nearest centroid to query
-        query = query.reshape(1, -1) if query.ndim == 1 else query
-        nearest_centroid = np.argmin(
-            [np.linalg.norm(query - centroid) for centroid in self.centroids]
-        )
+        distances_to_centroids = [np.linalg.norm(query - centroid) for centroid in self.centroids]
+        nearest_centroid = np.argmin(distances_to_centroids)
 
         # Fine search - return indices of vectors in the nearest centroid's index
-        nearest_vectors = index.get(nearest_centroid, [])
+        nearest_vectors = self.index.get(nearest_centroid, [])
         return nearest_vectors

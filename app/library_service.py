@@ -10,6 +10,7 @@ from app.repositories.chunk import ChunkRepository
 from app.repositories.db import get_db
 from app.repositories.document import DocumentRepository
 from app.repositories.library import LibraryRepository
+from app.utils.ivf import IVF
 
 
 def get_library_service():
@@ -81,6 +82,19 @@ class LibraryService:
 
     def delete(self, id: UUID):
         return self.libraries.delete(id)
+
+    def index(self, query: str):
+        # TODO: move this
+        query = self.embedder.embed([query])[0].T
+
+        chunks = self.chunks.find_all()
+        vectors = np.array([np.frombuffer(chunk.embedding) for chunk in chunks])
+        ivf = IVF()
+        # TODO: split the kmeans logic out and do this only once with IVF
+        ivf.fit(vectors)
+        ix = ivf.create_index(vectors)
+        result = ivf.search(query.reshape(-1, 1))
+        return [chunks[i].content for i in result]
 
     def search(self, search_str: str, id: UUID | None):
         embedding = self.embedder.embed((search_str,))

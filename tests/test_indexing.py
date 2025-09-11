@@ -6,8 +6,8 @@ from app.utils.ivf import IVF
 
 class TestIndexing:
     def test_search_basic_functionality(self):
-        """Test search() with simple synthetic data"""
         np.random.seed(42)
+        # 20 rows of 2 features
         cluster1 = np.random.normal([0, 0], 0.5, (20, 2))
         cluster2 = np.random.normal([5, 5], 0.5, (20, 2))
         cluster3 = np.random.normal([10, 0], 0.5, (20, 2))
@@ -15,13 +15,15 @@ class TestIndexing:
 
         query = np.array([0.1, 0.1])  # close to cluster1
 
-        ivf = IVF(n_partitions=3)
-        result = ivf.search(dataset, query)
+        ivf = IVF(n_partitions=6)
+        ivf.fit(dataset)
+        ivf.create_index(dataset)
+        result = ivf.search(query)
 
         # Should return indices from cluster1 (0-19)
         assert isinstance(result, list)
-        assert len(result) > 0
         assert all(isinstance(idx, int | np.integer) for idx in result)
+        assert result == list(range(20))
 
     def test_ivf_embeddings(self):
         eb = Embedder()
@@ -37,7 +39,9 @@ class TestIndexing:
         query = eb.embed([query_term])
 
         ivf = IVF(n_partitions=3)
-        res = ivf.search(embeddings, query[0])
+        ivf.fit(embeddings)
+        ivf.create_index(embeddings)
+        res = ivf.search(query[0])
 
         assert isinstance(res, list)
         assert all(isinstance(idx, int) for idx in res)
