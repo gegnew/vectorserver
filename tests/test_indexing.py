@@ -1,10 +1,36 @@
+from uuid import uuid4
+
 import numpy as np
 
 from app.embeddings import Embedder
+from app.models.chunk import Chunk
+from app.utils.flat_index import FlatIndex
 from app.utils.ivf import IVF
 
 
-class TestIndexing:
+class TestFlatIndex:
+    def test_basic_search(self):
+        chunks = [
+            Chunk(
+                id=uuid4(),
+                content=f"content {i}",
+                document_id=uuid4(),
+                embedding=np.random.random(10).astype(np.float32).tobytes(),
+            )
+            for i in range(5)
+        ]
+
+        flat_index = FlatIndex()
+        flat_index.fit(chunks)
+
+        query = np.random.random(10).astype(np.float32)
+        results = flat_index.search(query, k=3)
+
+        assert len(results) == 3
+        assert all(isinstance(chunk, Chunk) for chunk in results)
+
+
+class TestIVFIndex:
     def test_search_basic_functionality(self):
         np.random.seed(42)
         # 20 rows of 2 features
