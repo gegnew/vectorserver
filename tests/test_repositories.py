@@ -196,3 +196,18 @@ class TestFlatIndexRepository:
         query = np.random.random(128).astype(np.float32)
         results = flat_index_repository.search_chunks(query, k=8)
         assert len(results) == 8
+
+    def test_remove_chunks(self, flat_index_repository):
+        chunks = [create_test_chunk(i) for i in range(10)]
+        flat_index_repository.fit_chunks(chunks)
+
+        chunk_ids_to_remove = [chunks[0].id, chunks[1].id]
+        flat_index_repository.remove_chunks(chunk_ids_to_remove)
+
+        query = np.random.random(128).astype(np.float32)
+        results = flat_index_repository.search_chunks(query, k=10)
+        result_ids = [chunk.id for chunk in results]
+
+        for chunk_id in chunk_ids_to_remove:
+            assert chunk_id not in result_ids
+        assert len(results) == 8

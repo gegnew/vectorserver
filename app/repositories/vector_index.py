@@ -62,4 +62,26 @@ class FlatIndexRepository(VectorIndexRepository):
             self._vectors = np.hstack([self._vectors, new_processed_vectors])
 
     def remove_chunks(self, chunk_ids: list[UUID]):
-        pass
+        chunk_ids_set = set(chunk_ids)
+
+        indices_to_remove = [
+            self._chunk_to_index_map[chunk_id]
+            for chunk_id in chunk_ids
+            if chunk_id in self._chunk_to_index_map
+        ]
+        self._chunks = [c for c in self._chunks if c.id not in chunk_ids_set]
+
+        if self._vectors is not None and indices_to_remove:
+            indices_to_remove = set(indices_to_remove)
+            keep_mask = np.array(
+                [i not in indices_to_remove for i in range(self._vectors.shape[1])]
+            )
+            self._vectors = self._vectors[:, keep_mask]
+
+            if self._vectors.shape[1] == 0:
+                self._vectors = None
+
+        self._rebuild_index_map()
+
+    def _rebuild_index_map(self):
+        self._chunk_to_index_map = {chunk.id: i for i, chunk in enumerate(self._chunks)}
