@@ -1,4 +1,5 @@
 from pathlib import Path
+from uuid import uuid4
 
 import numpy as np
 import pytest
@@ -12,6 +13,7 @@ from app.repositories.document import DocumentRepository
 from app.repositories.library import LibraryRepository
 
 # TODO: move this to conftest
+from app.repositories.vector_index import FlatIndexRepository
 from app.settings import settings
 
 settings.db_path = "data/test.sqlite"
@@ -149,3 +151,31 @@ class TestChunkRepository:
     def test_delete(self, chunks, chunk):
         deleted = chunks.delete(chunk.id)
         assert deleted == 1
+
+
+def create_test_chunk(i: int, embedding_dim: int = 128) -> Chunk:
+    """Helper to create test chunks"""
+    embedding = np.random.random(embedding_dim).astype(np.float32)
+    return Chunk(
+        id=uuid4(),
+        content=f"test content {i}",
+        document_id=uuid4(),
+        embedding=embedding.tobytes(),
+    )
+
+
+@pytest.fixture
+def flat_index_repository():
+    yield FlatIndexRepository()
+
+
+class TestFlatIndexRepository:
+    def test_fit_and_search_chunks(self, flat_index_repository):
+        chunks = [create_test_chunk(i) for i in range(5)]
+
+        flat_index_repository.fit_chunks(chunks)
+        query = np.random.random(128).astype(np.float32)
+        results = flat_index_repository.search_chunks(query, k=3)
+
+        assert len(results) == 3
+        assert all(isinstance(chunk, Chunk) for chunk in results)
