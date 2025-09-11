@@ -10,24 +10,18 @@ from app.utils.ivf import IVF
 
 class TestFlatIndex:
     def test_basic_search(self):
-        chunks = [
-            Chunk(
-                id=uuid4(),
-                content=f"content {i}",
-                document_id=uuid4(),
-                embedding=np.random.random(10).astype(np.float32).tobytes(),
-            )
-            for i in range(5)
-        ]
+        vectors = np.random.random((5, 10)).astype(np.float32)
 
         flat_index = FlatIndex()
-        flat_index.fit(chunks)
+        flat_index.fit(vectors)
 
         query = np.random.random(10).astype(np.float32)
         results = flat_index.search(query, k=3)
 
         assert len(results) == 3
-        assert all(isinstance(chunk, Chunk) for chunk in results)
+        assert all(isinstance(idx, int) for idx in results)
+        assert all(0 <= idx < 5 for idx in results)
+
 
 
 class TestIVFIndex:

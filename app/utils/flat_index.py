@@ -8,25 +8,22 @@ class FlatIndex:
         self.chunks = []
         self.vectors = None
 
-    def fit(self, chunks: list[Chunk]):
-        self.chunks = chunks
-        if chunks:
-            self.vectors = np.array(
-                [np.frombuffer(chunk.embedding, dtype=np.float32) for chunk in chunks]
-            ).T
-        else:
-            self.vectors = None
+    def fit(self, vectors: np.ndarray):
+        """Fit the index with vectors (N, D) where N=samples, D=dimensions"""
+        self.vectors = vectors.T.copy()  # Store as (D, N) - features × samples
 
-    def search(self, query_vector: np.ndarray, k: int = 5) -> list[Chunk]:
-        """Search for k most similar chunks"""
-        if not self.chunks or self.vectors is None:
+    def search(self, query_vector: np.ndarray, k: int = 5) -> list[int]:
+        """Search for k most similar vectors
+
+        Return: index values
+        """
+        if self.vectors is None or len(self.vectors) == 0:
             return []
 
-        query = query_vector.reshape(1, -1)
-        similarities = self._cosine_similarity(query, self.vectors)
+        similarities = self._cosine_similarity(query_vector, self.vectors)
         top_k_indices = np.argsort(similarities)[::-1][:k]
 
-        return [self.chunks[i] for i in top_k_indices]
+        return top_k_indices.tolist()
 
     def _cosine_similarity(self, query: np.ndarray, vectors: np.ndarray) -> np.ndarray:
         similarities = np.squeeze(
