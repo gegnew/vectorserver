@@ -1,27 +1,23 @@
-from uuid import uuid4
-
 import numpy as np
 
 from app.embeddings import Embedder
-from app.models.chunk import Chunk
 from app.utils.flat_index import FlatIndex
 from app.utils.ivf import IVF
 
 
 class TestFlatIndex:
     def test_basic_search(self):
-        vectors = np.random.random((5, 10)).astype(np.float32)
+        vectors = np.random.random((5, 10))
 
         flat_index = FlatIndex()
         flat_index.fit(vectors)
 
-        query = np.random.random(10).astype(np.float32)
-        results = flat_index.search(query, k=3)
+        query = np.random.random(10)
+        results = flat_index.search(query, vectors.T, k=3)
 
         assert len(results) == 3
         assert all(isinstance(idx, int) for idx in results)
         assert all(0 <= idx < 5 for idx in results)
-
 
 
 class TestIVFIndex:
