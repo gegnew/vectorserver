@@ -13,21 +13,21 @@ class BaseRepository[T](ABC):
         self.db = db
 
     @abstractmethod
-    def create(self, entity: T) -> T:
+    async def create(self, entity: T) -> T:
         raise NotImplementedError()
 
     @abstractmethod
-    def find(self, _id: UUID) -> T | None:
+    async def find(self, _id: UUID) -> T | None:
         raise NotImplementedError()
 
     @abstractmethod
-    def find_all(self) -> Sequence[T]:
+    async def find_all(self) -> Sequence[T]:
         raise NotImplementedError()
 
     @abstractmethod
-    def update(self, entity: T) -> T | None:
+    async def update(self, entity: T) -> T | None:
         raise NotImplementedError()
 
     @abstractmethod
-    def delete(self, _id: UUID) -> int:
+    async def delete(self, _id: UUID) -> int:
         raise NotImplementedError()

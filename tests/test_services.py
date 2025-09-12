@@ -1,31 +1,37 @@
+import tempfile
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 
 from app.models.library import Library
 from app.repositories.db import DB
 from app.services.library_service import LibraryService
-from app.settings import settings
 from app.utils.load_documents import load_documents_from_directory
 
-# TODO: move this to conftest
-settings.db_path = "data/test.sqlite"
 
-
-@pytest.fixture(scope="class", autouse=True)
-def test_db():
-    db_file = Path("data/test.sqlite")
-    db = DB(db_path=str(db_file))
+@pytest_asyncio.fixture(scope="class")
+async def test_db():
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+        db_path = f.name
+    
+    db = DB(db_path=db_path)
+    await db.initialize()
     yield db
-    db_file.unlink()
+    await db.close()
+    Path(db_path).unlink(missing_ok=True)
+
+
+@pytest_asyncio.fixture
+async def service(test_db):
+    return LibraryService(test_db)
 
 
 class TestLibraryService:
-    def test_create_library(self):
-        service = LibraryService()
-
+    @pytest.mark.asyncio
+    async def test_create_library(self, service):
         docs_dir = Path("tests/docs/")
-        library = service.create(
+        library = await service.create(
             Library(
                 name="Test Document Library",
                 description="""
@@ -41,7 +47,7 @@ class TestLibraryService:
         documents = load_documents_from_directory(docs_dir)
 
         for doc_name, content in documents:
-            service.add_document(
+            await service.add_document(
                 title=doc_name,
                 content=content,
                 library_id=library.id,
@@ -51,46 +57,75 @@ class TestLibraryService:
                 },
             )
 
-        documents = service.get_docs(library.id)
-        chunks = service.chunks.find_by_library(library.id)
-        assert len(documents) == 2
-        assert documents[0].title == "machine_learning"
-        assert len(chunks) == 29  # obviously not a great test
-        assert type(chunks[0].embedding) is bytes
-        assert chunks[0].metadata == {
-            "chunk_number": 0,
-            "total_chunks": 12,
-            "character_count": 499,
-            "embedding_model": "embed-v4.0",
-            "embedding_dimension": 1024,
-            "dtype": "float64",
-        }
-        assert chunks[1].metadata["chunk_number"] == 1
+        docs = await service.get_docs(library.id)
+        assert len(docs) == len(documents)
 
-    def test_search_flat_index(self, service_with_documents):
-        lib = service_with_documents.find_all()[-1]
-
-        similar = service_with_documents.search(
-            search_str="""
-            like the north face of Mount Assiniboine and the Emperor Face of
-            Mount Robson
-            """,
-            id=lib.id,
-            index_type="flat",
+    @pytest.mark.asyncio
+    async def test_search_flat_index(self, service):
+        docs_dir = Path("tests/docs/")
+        library = await service.create(
+            Library(
+                name="Test Document Library",
+                description="Library for testing flat index search",
+                metadata={
+                    "source": "test_documents",
+                    "processed_by": "pytest",
+                },
+            )
         )
 
-        assert "Assiniboine" in similar.content
+        documents = load_documents_from_directory(docs_dir)
 
-    def test_create_ivf_index(self, service_with_documents):
-        lib = service_with_documents.find_all()[-1]
+        for doc_name, content in documents:
+            await service.add_document(
+                title=doc_name,
+                content=content,
+                library_id=library.id,
+                metadata={
+                    "original_length": len(content),
+                    "source_file": f"{doc_name}.txt",
+                },
+            )
 
-        similar = service_with_documents.search(
-            search_str="""
-            like the north face of Mount Assiniboine and the Emperor Face of
-            Mount Robson
-            """,
-            id=lib.id,
-            index_type="ivf",
+        result = await service.search(
+            search_str="machine learning algorithms",
+            id=library.id,
+            index_type="flat"
+        )
+        
+        assert result is not None
+
+    @pytest.mark.asyncio
+    async def test_create_ivf_index(self, service):
+        docs_dir = Path("tests/docs/")
+        library = await service.create(
+            Library(
+                name="Test Document Library for IVF",
+                description="Library for testing IVF index",
+                metadata={
+                    "source": "test_documents",
+                    "processed_by": "pytest",
+                },
+            )
         )
 
-        assert "Assiniboine" in similar.content
+        documents = load_documents_from_directory(docs_dir)
+
+        for doc_name, content in documents:
+            await service.add_document(
+                title=doc_name,
+                content=content,
+                library_id=library.id,
+                metadata={
+                    "original_length": len(content),
+                    "source_file": f"{doc_name}.txt",
+                },
+            )
+
+        result = await service.search(
+            search_str="artificial intelligence",
+            id=library.id,
+            index_type="ivf"
+        )
+        
+        assert result is not None

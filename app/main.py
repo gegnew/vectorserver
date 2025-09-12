@@ -3,14 +3,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .logger import logger
+from .repositories.db import create_db
 from .routes import libraries_router, search_router
+from .routes.documents import router as documents_router
 from .settings import settings
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Initializing database connection...")
+    app.state.db = await create_db()
     logger.info("Vector Database API startup complete")
     yield
+    logger.info("Closing database connection...")
+    await app.state.db.close()
     logger.info("Vector Database API shutdown")
 
 

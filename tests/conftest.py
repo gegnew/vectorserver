@@ -3,6 +3,7 @@ from uuid import uuid4
 
 import numpy as np
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -14,20 +15,22 @@ from app.utils.load_documents import load_documents_from_directory
 
 @pytest.fixture
 def client():
-    client = TestClient(app)
-    return client
+    with TestClient(app) as client:
+        yield client
 
 
-@pytest.fixture(scope="class")
-def service_with_documents():
+@pytest_asyncio.fixture(scope="class")
+async def service_with_documents():
     """Add documents to the database for testing.
 
     Spins up and down for each class; this is a bit slow, but we can optimize it later.
     """
-    service = LibraryService()
+    from app.repositories.db import create_db
+    db = await create_db()
+    service = LibraryService(db)
 
     docs_dir = Path("tests/docs/")
-    library = service.create(
+    library = await service.create(
         Library(
             name="Test Document Library",
             description="""
@@ -43,7 +46,7 @@ def service_with_documents():
     documents = load_documents_from_directory(docs_dir)
 
     for doc_name, content in documents:
-        service.add_document(
+        await service.add_document(
             title=doc_name,
             content=content,
             library_id=library.id,

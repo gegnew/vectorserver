@@ -19,8 +19,8 @@ class DocumentRepository(BaseRepository[Document]):
             metadata=row[6],
         )
 
-    def create(self, entity: Document) -> Document:
-        self.db.conn.execute(
+    async def create(self, entity: Document) -> Document:
+        await self.db.write_query(
             """
             INSERT INTO documents (id, title, content, library_id, created_at,
             updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -37,43 +37,42 @@ class DocumentRepository(BaseRepository[Document]):
         )
         return entity
 
-    def find_by_library(self, id: UUID) -> list[Document]:
-        rows = self.db.conn.execute(
+    async def find_by_library(self, id: UUID) -> list[Document]:
+        rows = await self.db.read_query(
             """
             SELECT id, title, content, library_id, created_at, updated_at, metadata FROM
             documents WHERE library_id = ?
             """,
             (str(id),),
-        ).fetchall()
+        )
         return [self.to_entity(row) for row in rows]
 
-    def find(self, id: UUID) -> Document | None:
-        row = self.db.conn.execute(
+    async def find(self, id: UUID) -> Document | None:
+        row = await self.db.read_one(
             """
             SELECT id, title, content, library_id, created_at, updated_at, metadata FROM
             documents WHERE id = ?
             """,
             (str(id),),
-        ).fetchone()
+        )
 
         if not row:
             return None
 
         return self.to_entity(row)
 
-    def find_all(self) -> Sequence[Document]:
-        cursor = self.db.conn.execute(
+    async def find_all(self) -> Sequence[Document]:
+        rows = await self.db.read_query(
             """
             SELECT id, title, content, library_id, created_at, updated_at, metadata FROM
             documents
             """,
         )
 
-        return [self.to_entity(row) for row in cursor.fetchall()]
+        return [self.to_entity(row) for row in rows]
 
-    def update(self, entity: Document) -> Document | None:
-
-        res = self.db.conn.execute(
+    async def update(self, entity: Document) -> Document | None:
+        changes = await self.db.write_query(
             """
             UPDATE documents
                SET title = ?,
@@ -94,11 +93,11 @@ class DocumentRepository(BaseRepository[Document]):
                 str(entity.id),
             ),
         )
-        if res.rowcount != 1:
+        if changes != 1:
             raise KeyError(entity.id)
 
-        return self.find(entity.id)
+        return await self.find(entity.id)
 
-    def delete(self, id: UUID) -> int:
-        cursor = self.db.conn.execute("DELETE FROM documents WHERE id = ?", (str(id),))
-        return cursor.rowcount
+    async def delete(self, id: UUID) -> int:
+        changes = await self.db.write_query("DELETE FROM documents WHERE id = ?", (str(id),))
+        return changes

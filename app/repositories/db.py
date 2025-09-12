@@ -94,9 +94,9 @@ class DB:
             await self.initialize()
 
         async with self._write_lock:
-            await self.conn.execute(query, params or [])
+            cursor = await self.conn.execute(query, params or [])
             await self.conn.commit()
-            return self.conn.total_changes
+            return cursor.rowcount
 
     async def close(self):
         if self.conn:

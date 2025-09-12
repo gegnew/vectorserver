@@ -19,8 +19,8 @@ class ChunkRepository(BaseRepository[Chunk]):
             metadata=row[6],
         )
 
-    def create(self, entity: Chunk) -> Chunk:
-        self.db.conn.execute(
+    async def create(self, entity: Chunk) -> Chunk:
+        await self.db.write_query(
             """
             INSERT INTO chunks (id, content, document_id, embedding,
             created_at, updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -37,33 +37,32 @@ class ChunkRepository(BaseRepository[Chunk]):
         )
         return entity
 
-    def find(self, id: UUID) -> Chunk | None:
-        row = self.db.conn.execute(
+    async def find(self, id: UUID) -> Chunk | None:
+        row = await self.db.read_one(
             """
             SELECT id, content, document_id, embedding, created_at, updated_at, metadata
             FROM chunks WHERE id = ?
             """,
             (str(id),),
-        ).fetchone()
+        )
 
         if not row:
             return None
 
         return self.to_entity(row)
 
-    def find_all(self) -> Sequence[Chunk]:
-        cursor = self.db.conn.execute(
+    async def find_all(self) -> Sequence[Chunk]:
+        rows = await self.db.read_query(
             """
             SELECT id, content, document_id, embedding, created_at, updated_at, metadata
             FROM chunks
             """,
         )
 
-        return [self.to_entity(row) for row in cursor.fetchall()]
+        return [self.to_entity(row) for row in rows]
 
-    def update(self, entity: Chunk) -> Chunk | None:
-
-        res = self.db.conn.execute(
+    async def update(self, entity: Chunk) -> Chunk | None:
+        changes = await self.db.write_query(
             """
             UPDATE chunks
                SET content = ?,
@@ -84,13 +83,13 @@ class ChunkRepository(BaseRepository[Chunk]):
                 str(entity.id),
             ),
         )
-        if res.rowcount != 1:
+        if changes != 1:
             raise KeyError(entity.id)
 
-        return self.find(entity.id)
+        return await self.find(entity.id)
 
-    def find_by_library(self, library_id: UUID) -> list[Chunk]:
-        rows = self.db.conn.execute(
+    async def find_by_library(self, library_id: UUID) -> list[Chunk]:
+        rows = await self.db.read_query(
             """
             SELECT c.id, c.content, c.document_id, c.embedding,
             c.created_at, c.updated_at, c.metadata
@@ -99,9 +98,9 @@ class ChunkRepository(BaseRepository[Chunk]):
             WHERE d.library_id = ?
             """,
             (str(library_id),),
-        ).fetchall()
+        )
         return [self.to_entity(row) for row in rows]
 
-    def delete(self, id: UUID) -> int:
-        cursor = self.db.conn.execute("DELETE FROM chunks WHERE id = ?", (str(id),))
-        return cursor.rowcount
+    async def delete(self, id: UUID) -> int:
+        changes = await self.db.write_query("DELETE FROM chunks WHERE id = ?", (str(id),))
+        return changes

@@ -19,12 +19,15 @@ from tests.conftest import create_test_chunk
 
 @pytest_asyncio.fixture(scope="class")
 async def test_db():
-    db_file = Path("data/test.sqlite")
-    db = DB(db_path=str(db_file))
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+        db_path = f.name
+    
+    db = DB(db_path=db_path)
     await db.initialize()
     yield db
     await db.close()
-    db_file.unlink(missing_ok=True)
+    Path(db_path).unlink(missing_ok=True)
 
 
 @pytest_asyncio.fixture
@@ -48,20 +51,22 @@ async def lib(libs):
     yield lib
 
 
-@pytest.fixture
-def doc(lib, docs):
-    yield docs.create(Document(title="Test Document", library_id=lib.id))
+@pytest_asyncio.fixture
+async def doc(lib, docs):
+    doc = await docs.create(Document(title="Test Document", library_id=lib.id))
+    yield doc
 
 
-@pytest.fixture
-def chunk(doc, chunks):
-    yield chunks.create(
+@pytest_asyncio.fixture
+async def chunk(doc, chunks):
+    chunk = await chunks.create(
         Chunk(
             content="test chunk",
             embedding=np.random.random(10).tobytes(),
             document_id=doc.id,
         )
     )
+    yield chunk
 
 
 class TestLibraryRepository:
@@ -111,52 +116,62 @@ class TestLibraryRepository:
 
 
 class TestDocumentRepository:
-    def test_create(self, docs, doc):
-        in_db = docs.find(doc.id)
+    @pytest.mark.asyncio
+    async def test_create(self, docs, doc):
+        in_db = await docs.find(doc.id)
         assert in_db == doc
 
-    def test_find_all(self, docs, doc):
-        docs = docs.find_all()
-        assert type(docs) is list
-        assert type(docs[0]) is Document
+    @pytest.mark.asyncio
+    async def test_find_all(self, docs, doc):
+        all_docs = await docs.find_all()
+        assert type(all_docs) is list
+        assert type(all_docs[0]) is Document
 
-    def test_update(self, docs, doc):
-        doc = docs.find_all()[0]
+    @pytest.mark.asyncio
+    async def test_update(self, docs, doc):
+        all_docs = await docs.find_all()
+        doc = all_docs[0]
 
         doc.title = "New Test Doc"
-        updated_doc = docs.update(doc)
+        updated_doc = await docs.update(doc)
 
         assert updated_doc.title == "New Test Doc"
-        is_in_db_doc = docs.find(doc.id)
+        is_in_db_doc = await docs.find(doc.id)
         assert is_in_db_doc.title == "New Test Doc"
 
-    def test_delete(self, docs, doc):
-        deleted = docs.delete(doc.id)
+    @pytest.mark.asyncio
+    async def test_delete(self, docs, doc):
+        deleted = await docs.delete(doc.id)
         assert deleted == 1
 
 
 class TestChunkRepository:
-    def test_create(self, chunks, chunk):
-        in_db = chunks.find(chunk.id)
+    @pytest.mark.asyncio
+    async def test_create(self, chunks, chunk):
+        in_db = await chunks.find(chunk.id)
         assert in_db == chunk
 
-    def test_find_all(self, chunks, chunk):
-        all_chunks = chunks.find_all()
+    @pytest.mark.asyncio
+    async def test_find_all(self, chunks, chunk):
+        all_chunks = await chunks.find_all()
         assert type(all_chunks) is list
         assert type(all_chunks[0]) is Chunk
 
-    def test_update(self, chunks, chunk):
-        chunk = chunks.find_all()[0]
+    @pytest.mark.asyncio
+    async def test_update(self, chunks, chunk):
+        all_chunks = await chunks.find_all()
+        chunk = all_chunks[0]
 
         chunk.content = "New Test Chunk"
-        updated_chunk = chunks.update(chunk)
+        updated_chunk = await chunks.update(chunk)
 
         assert updated_chunk.content == "New Test Chunk"
-        is_in_db_chunk = chunks.find(chunk.id)
+        is_in_db_chunk = await chunks.find(chunk.id)
         assert is_in_db_chunk.content == "New Test Chunk"
 
-    def test_delete(self, chunks, chunk):
-        deleted = chunks.delete(chunk.id)
+    @pytest.mark.asyncio
+    async def test_delete(self, chunks, chunk):
+        deleted = await chunks.delete(chunk.id)
         assert deleted == 1
 
 
