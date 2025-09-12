@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import pytest_asyncio
 
 from app.models.chunk import Chunk
 from app.models.document import Document
@@ -11,40 +12,40 @@ from app.repositories.db import DB
 from app.repositories.document import DocumentRepository
 from app.repositories.library import LibraryRepository
 
-# TODO: move this to conftest
 from app.repositories.vector_index import FlatIndexRepository, IVFIndexRepository
 from app.settings import settings
 from tests.conftest import create_test_chunk
 
-settings.db_path = "data/test.sqlite"
 
-
-@pytest.fixture(scope="class", autouse=True)
-def test_db():
+@pytest_asyncio.fixture(scope="class")
+async def test_db():
     db_file = Path("data/test.sqlite")
     db = DB(db_path=str(db_file))
+    await db.initialize()
     yield db
-    db_file.unlink()
+    await db.close()
+    db_file.unlink(missing_ok=True)
 
 
-@pytest.fixture
-def libs(test_db):
+@pytest_asyncio.fixture
+async def libs(test_db):
     return LibraryRepository(db=test_db)
 
 
-@pytest.fixture
-def docs(test_db):
+@pytest_asyncio.fixture
+async def docs(test_db):
     return DocumentRepository(db=test_db)
 
 
-@pytest.fixture
-def chunks(test_db):
+@pytest_asyncio.fixture
+async def chunks(test_db):
     return ChunkRepository(db=test_db)
 
 
-@pytest.fixture
-def lib(libs):
-    yield libs.create(Library(name="test lib"))
+@pytest_asyncio.fixture
+async def lib(libs):
+    lib = await libs.create(Library(name="test lib"))
+    yield lib
 
 
 @pytest.fixture
@@ -64,43 +65,49 @@ def chunk(doc, chunks):
 
 
 class TestLibraryRepository:
-    def test_create(self, libs, lib):
-        in_db = libs.find(lib.id)
+    @pytest.mark.asyncio
+    async def test_create(self, libs, lib):
+        in_db = await libs.find(lib.id)
         assert in_db == lib
 
-    def test_find_all(self, libs, lib):
-        all_libs = libs.find_all()
+    @pytest.mark.asyncio
+    async def test_find_all(self, libs, lib):
+        all_libs = await libs.find_all()
         assert type(all_libs) is list
         assert type(all_libs[0]) is Library
 
-    def test_update(self, libs, lib):
-        lib = libs.find_all()[0]
+    @pytest.mark.asyncio
+    async def test_update(self, libs, lib):
+        all_libs = await libs.find_all()
+        lib = all_libs[0]
 
         lib.name = "New test lib name"
-        updated_lib = libs.update(lib)
+        updated_lib = await libs.update(lib)
 
         assert updated_lib.name == "New test lib name"
-        is_in_db_lib = libs.find(lib.id)
+        is_in_db_lib = await libs.find(lib.id)
         assert is_in_db_lib.name == "New test lib name"
 
-    def test_delete(self, libs, lib):
-        deleted = libs.delete(lib.id)
+    @pytest.mark.asyncio
+    async def test_delete(self, libs, lib):
+        deleted = await libs.delete(lib.id)
         assert deleted == 1
 
-    def test_delete_cascade(self, libs, docs, chunks, lib, doc, chunk):
+    @pytest.mark.asyncio
+    async def test_delete_cascade(self, libs, docs, chunks, lib, doc, chunk):
         # Given: Library with an associated Document and Chunk
-        libs.find(lib.id)
-        doc_in_db = docs.find(doc.id)
-        chunk_in_db = chunks.find(chunk.id)
+        await libs.find(lib.id)
+        doc_in_db = await docs.find(doc.id)
+        chunk_in_db = await chunks.find(chunk.id)
         assert doc_in_db.library_id == lib.id
         assert chunk_in_db.document_id == doc.id
 
         # When: the Library is deleted
-        libs.delete(lib.id)
+        await libs.delete(lib.id)
 
         # Then: the Document and Chunk should also be deleted
-        assert docs.find(doc.id) is None
-        assert chunks.find(chunk.id) is None
+        assert await docs.find(doc.id) is None
+        assert await chunks.find(chunk.id) is None
 
 
 class TestDocumentRepository:

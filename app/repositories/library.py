@@ -18,8 +18,8 @@ class LibraryRepository(BaseRepository[Library]):
             metadata=row[5],
         )
 
-    def create(self, entity: Library) -> Library:
-        self.db.conn.execute(
+    async def create(self, entity: Library) -> Library:
+        await self.db.write_query(
             """
             INSERT INTO libraries (id, name, description, created_at,
             updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?)
@@ -35,32 +35,32 @@ class LibraryRepository(BaseRepository[Library]):
         )
         return entity
 
-    def find(self, id: UUID) -> Library | None:
-        row = self.db.conn.execute(
+    async def find(self, id: UUID) -> Library | None:
+        row = await self.db.read_one(
             """
             SELECT id, name, description, created_at, updated_at, metadata FROM
             libraries WHERE id = ?
             """,
             (str(id),),
-        ).fetchone()
+        )
 
         if not row:
             return None
 
         return self.to_entity(row)
 
-    def find_all(self) -> Sequence[Library]:
-        cursor = self.db.conn.execute(
+    async def find_all(self) -> Sequence[Library]:
+        rows = await self.db.read_query(
             """
             SELECT id, name, description, created_at, updated_at, metadata FROM
             libraries
             """,
         )
 
-        return [self.to_entity(row) for row in cursor.fetchall()]
+        return [self.to_entity(row) for row in rows]
 
-    def update(self, entity: Library) -> Library | None:
-        res = self.db.conn.execute(
+    async def update(self, entity: Library) -> Library | None:
+        changes = await self.db.write_query(
             """
             UPDATE libraries
                SET name = ?,
@@ -79,11 +79,11 @@ class LibraryRepository(BaseRepository[Library]):
                 str(entity.id),
             ),
         )
-        if res.rowcount != 1:
+        if changes != 1:
             raise KeyError(entity.id)
 
-        return self.find(entity.id)
+        return await self.find(entity.id)
 
-    def delete(self, id: UUID) -> int:
-        cursor = self.db.conn.execute("DELETE FROM libraries WHERE id = ?", (str(id),))
-        return cursor.rowcount
+    async def delete(self, id: UUID) -> int:
+        changes = await self.db.write_query("DELETE FROM libraries WHERE id = ?", (str(id),))
+        return changes
