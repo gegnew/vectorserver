@@ -34,4 +34,12 @@ class DocumentCreate(DocumentBase):
 
 
 class DocumentUpdate(DocumentBase):
-    pass
+    id: UUID
+
+
+class LibraryUpdate(BaseModel):
+    id: UUID
+    title: str
+    content: str
+    metadata: dict
+    library_id: UUID

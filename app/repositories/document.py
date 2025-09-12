@@ -78,7 +78,6 @@ class DocumentRepository(BaseRepository[Document]):
                SET title = ?,
                content = ?,
                library_id = ?,
-               created_at = ?,
                updated_at = ?,
                metadata = ?
              WHERE documents.id = ?;
@@ -87,7 +86,6 @@ class DocumentRepository(BaseRepository[Document]):
                 entity.title,
                 entity.content,
                 str(entity.library_id),
-                entity.created_at.timestamp(),
                 datetime.now(UTC).timestamp(),
                 json.dumps(entity.metadata) if entity.metadata else None,
                 str(entity.id),
@@ -99,5 +97,7 @@ class DocumentRepository(BaseRepository[Document]):
         return await self.find(entity.id)
 
     async def delete(self, id: UUID) -> int:
-        changes = await self.db.write_query("DELETE FROM documents WHERE id = ?", (str(id),))
+        changes = await self.db.write_query(
+            "DELETE FROM documents WHERE id = ?", (str(id),)
+        )
         return changes

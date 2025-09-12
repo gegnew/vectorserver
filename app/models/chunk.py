@@ -34,4 +34,8 @@ class ChunkCreate(ChunkBase):
 
 
 class ChunkUpdate(ChunkBase):
-    pass
+    id: UUID
+    content: str
+    embedding: bytes
+    metadata: dict | None
+    document_id: UUID

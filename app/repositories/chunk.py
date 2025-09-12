@@ -68,7 +68,6 @@ class ChunkRepository(BaseRepository[Chunk]):
                SET content = ?,
                document_id = ?,
                embedding = ?,
-               created_at = ?,
                updated_at = ?,
                metadata = ?
              WHERE chunks.id = ?;
@@ -77,7 +76,6 @@ class ChunkRepository(BaseRepository[Chunk]):
                 entity.content,
                 str(entity.document_id),
                 entity.embedding,
-                entity.created_at.timestamp(),
                 datetime.now(UTC).timestamp(),
                 json.dumps(entity.metadata) if entity.metadata else None,
                 str(entity.id),
@@ -102,5 +100,7 @@ class ChunkRepository(BaseRepository[Chunk]):
         return [self.to_entity(row) for row in rows]
 
     async def delete(self, id: UUID) -> int:
-        changes = await self.db.write_query("DELETE FROM chunks WHERE id = ?", (str(id),))
+        changes = await self.db.write_query(
+            "DELETE FROM chunks WHERE id = ?", (str(id),)
+        )
         return changes

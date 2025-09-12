@@ -65,7 +65,6 @@ class LibraryRepository(BaseRepository[Library]):
             UPDATE libraries
                SET name = ?,
                description = ?,
-               created_at = ?,
                updated_at = ?,
                metadata = ?
              WHERE libraries.id = ?;
@@ -73,7 +72,6 @@ class LibraryRepository(BaseRepository[Library]):
             (
                 entity.name,
                 entity.description,
-                entity.created_at.timestamp(),
                 datetime.now(UTC).timestamp(),
                 json.dumps(entity.metadata) if entity.metadata else None,
                 str(entity.id),
@@ -85,5 +83,7 @@ class LibraryRepository(BaseRepository[Library]):
         return await self.find(entity.id)
 
     async def delete(self, id: UUID) -> int:
-        changes = await self.db.write_query("DELETE FROM libraries WHERE id = ?", (str(id),))
+        changes = await self.db.write_query(
+            "DELETE FROM libraries WHERE id = ?", (str(id),)
+        )
         return changes

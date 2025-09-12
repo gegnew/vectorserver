@@ -34,5 +34,8 @@ class LibraryCreate(LibraryBase):
     pass
 
 
-class LibraryUpdate(LibraryBase):
-    pass
+class LibraryUpdate(BaseModel):
+    id: UUID
+    name: str
+    description: str
+    metadata: dict | None
