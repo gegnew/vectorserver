@@ -14,7 +14,7 @@ from app.utils.load_documents import load_documents_from_directory
 async def test_db():
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         db_path = f.name
-    
+
     db = DB(db_path=db_path)
     await db.initialize()
     yield db
@@ -92,7 +92,7 @@ class TestLibraryService:
             id=library.id,
             index_type="flat"
         )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -127,5 +127,5 @@ class TestLibraryService:
             id=library.id,
             index_type="ivf"
         )
-        
+
         assert result is not None

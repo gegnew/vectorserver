@@ -41,6 +41,7 @@ lint.ignore = [
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
 ]
+extend-exclude = ["tests/test_e2e.py"]
 
 [tool.coverage.run]
 source = ["."]

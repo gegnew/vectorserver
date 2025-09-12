@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
+from aiosqlite import IntegrityError
 
 from app.repositories.db import DB
 
@@ -70,7 +71,10 @@ async def test_concurrent_reads():
 
     try:
         await db.write_query(
-            "INSERT INTO libraries (id, name, description, created_at) VALUES (?, ?, ?, ?)",
+            """
+            INSERT INTO libraries (id, name, description, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
             ("test-id", "Test Library", "A test library", 1234567890),
         )
 
@@ -103,7 +107,10 @@ async def test_sequential_writes():
     try:
         for i in range(5):
             await db.write_query(
-                "INSERT INTO libraries (id, name, description, created_at) VALUES (?, ?, ?, ?)",
+                """
+                INSERT INTO libraries (id, name, description, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
                 (f"test-id-{i}", f"Test Library {i}", f"Library {i}", 1234567890 + i),
             )
 
@@ -129,7 +136,10 @@ async def test_foreign_key_constraints(db):
     )
 
     await db.write_query(
-        "INSERT INTO documents (id, library_id, title, content, created_at) VALUES (?, ?, ?, ?, ?)",
+        """
+        INSERT INTO documents (id, library_id, title, content, created_at)
+        VALUES (?, ?, ?, ?, ?)
+        """,
         ("doc-1", "lib-1", "Test Doc", "Content", 1234567890),
     )
 
@@ -137,9 +147,12 @@ async def test_foreign_key_constraints(db):
     assert len(rows) == 1
 
     # try to insert a document with invalid foreign key
-    with pytest.raises(Exception):
+    with pytest.raises(IntegrityError):
         await db.write_query(
-            "INSERT INTO documents (id, library_id, title, content, created_at) VALUES (?, ?, ?, ?, ?)",
+            """
+            INSERT INTO documents (id, library_id, title, content, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
             ("doc-2", "nonexistent-lib", "Test Doc 2", "Content", 1234567890),
         )
 

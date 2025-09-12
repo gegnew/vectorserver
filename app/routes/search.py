@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.models.document import Document
 from app.models.models import SearchText
@@ -11,9 +11,16 @@ router = APIRouter(prefix="/search", tags=["search"])
 async def search_similar(
     search_data: SearchText, service: LibraryService = Depends(get_library_service)
 ):
-    doc = service.search(
+    doc = await service.search(
         search_str=search_data.content,
         id=search_data.library_id,
         index_type=search_data.index_type,
     )
+
+    if doc is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No matching documents found for the search query"
+        )
+
     return doc

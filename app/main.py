@@ -29,6 +29,7 @@ app = FastAPI(
 )
 app.include_router(libraries_router)
 app.include_router(search_router)
+app.include_router(documents_router)
 
 
 @app.get("/")

@@ -11,9 +11,7 @@ from app.repositories.chunk import ChunkRepository
 from app.repositories.db import DB
 from app.repositories.document import DocumentRepository
 from app.repositories.library import LibraryRepository
-
 from app.repositories.vector_index import FlatIndexRepository, IVFIndexRepository
-from app.settings import settings
 from tests.conftest import create_test_chunk
 
 
@@ -22,7 +20,7 @@ async def test_db():
     import tempfile
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         db_path = f.name
-    
+
     db = DB(db_path=db_path)
     await db.initialize()
     yield db

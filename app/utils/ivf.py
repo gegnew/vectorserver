@@ -10,8 +10,15 @@ class KMeans:
         self.is_fitted = False
 
     def fit(self, X):
-        # Initialize centroids randomly
-        ix = np.random.choice(len(X), self.n_clusters, replace=False)
+        # Initialize centroids randomly.
+        # If fewer data points than clusters, use all data points and reduce clusters
+        n_samples = len(X)
+        actual_clusters = min(self.n_clusters, n_samples)
+
+        if actual_clusters < self.n_clusters:
+            self.n_clusters = actual_clusters
+
+        ix = np.random.choice(n_samples, actual_clusters, replace=False)
         self.centroids = X[ix]
 
         # Initialize labels

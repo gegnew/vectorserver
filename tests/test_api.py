@@ -33,9 +33,15 @@ class TestRoutes:
             "description": "A test library",
         }
         lib = client.post("/libraries", json=library_data).json()
-        lib["name"] = "Updated Test Library"
 
-        response = client.post("/libraries", json=lib)
+        response = client.put(
+            "/libraries", json={
+                "id": lib["id"],
+                "name": "Updated Test Library",
+                "description": "Updated test library description",
+                "metadata": {"updated": True}
+            }
+        )
         assert response.status_code == 201
         assert response.json()["name"] == "Updated Test Library"
 

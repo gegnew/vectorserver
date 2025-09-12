@@ -1,13 +1,14 @@
 from typing import Literal
 from uuid import UUID
 
+from fastapi import Depends
+
 from app.embeddings import Embedder
 from app.models.chunk import Chunk
 from app.models.document import Document
 from app.models.library import Library
 from app.repositories.chunk import ChunkRepository
-from fastapi import Depends, Request
-from app.repositories.db import get_db, DB
+from app.repositories.db import DB, get_db
 from app.repositories.document import DocumentRepository
 from app.repositories.library import LibraryRepository
 from app.repositories.vector_index import FlatIndexRepository, IVFIndexRepository
