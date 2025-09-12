@@ -1,5 +1,8 @@
-import sqlite3
+import asyncio
 from pathlib import Path
+
+import aiosqlite
+from fastapi import Request
 
 from app.settings import settings
 
@@ -40,26 +43,75 @@ CREATE TABLE IF NOT EXISTS chunks (
 class DB:
     def __init__(self, db_path: str):
         self.db_path = db_path
+        self.conn: aiosqlite.Connection | None = None
+        self._read_semaphore = asyncio.Semaphore(10)  # 10 concurrent reads
+        self._write_lock = asyncio.Lock()  # single writer
+        self._initialized = False
 
-        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+    async def initialize(self):
+        """Initialize the database connection and setup"""
+        if self._initialized:
+            return
 
-        self.conn: sqlite3.Connection | None = sqlite3.connect(
-            self.db_path,
-            isolation_level=None,
-            check_same_thread=False,
-        )
+        Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            self.conn.cursor().execute(
-                "PRAGMA foreign_keys = ON"
-            )  # necessary for each connection
-            self.conn.cursor().executescript(_TABLES)
-            self.conn.commit()
-        except:
-            self.conn.close()
-            self.conn = None
+            self.conn = await aiosqlite.connect(
+                self.db_path,
+                check_same_thread=False,
+            )
+
+            await self.conn.execute("PRAGMA foreign_keys = ON")
+            await self.conn.execute("PRAGMA journal_mode = WAL")
+            await self.conn.executescript(_TABLES)
+            await self.conn.commit()
+
+            self._initialized = True
+        except Exception:
+            if self.conn:
+                await self.conn.close()
+                self.conn = None
             raise
 
+    async def read_query(self, query: str, params=None):
+        if not self._initialized:
+            await self.initialize()
 
-def get_db():
-    return DB(settings.db_path)
+        async with self._read_semaphore:
+            async with self.conn.execute(query, params or []) as cursor:
+                return await cursor.fetchall()
+
+    async def read_one(self, query: str, params=None):
+        if not self._initialized:
+            await self.initialize()
+
+        async with self._read_semaphore:
+            async with self.conn.execute(query, params or []) as cursor:
+                return await cursor.fetchone()
+
+    async def write_query(self, query: str, params=None):
+        if not self._initialized:
+            await self.initialize()
+
+        async with self._write_lock:
+            await self.conn.execute(query, params or [])
+            await self.conn.commit()
+            return self.conn.total_changes
+
+    async def close(self):
+        if self.conn:
+            await self.conn.close()
+            self.conn = None
+            self._initialized = False
+
+
+async def create_db():
+    """Create and initialize a new DB instance."""
+    db = DB(settings.db_path)
+    await db.initialize()
+    return db
+
+
+def get_db(request: Request):
+    """FastAPI dependency to get the DB instance from app state."""
+    return request.app.state.db
