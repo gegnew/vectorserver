@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2025-09-12
+
+### Added
+
+- **Document Management**: Complete document CRUD operations with add_document route
+- **End-to-End Testing**: Comprehensive E2E test suite for API validation
+- **Async Architecture**: Full conversion to async/await pattern across all services and repositories
+- **Database Operations**: Async database operations with improved performance
+
+### Changed
+
+- **Repository Layer**: All repositories converted to async operations
+- **Service Layer**: LibraryService and all services now use async patterns
+- **Route Handlers**: All API routes converted to async for better concurrency
+- **Database Connection**: Async database connections with proper connection management
+- **Development Environment**: Updated dev database and improved reload configuration
+
+### Fixed
+
+- **Repository Updates**: Removed required created_at field from update payloads
+- **Main Application**: Set proper reload directories for development
+- **Test Suite**: Fixed FlatIndex tests and improved test reliability
+
+### Technical Improvements
+
+- **Performance**: Async operations provide better I/O handling and concurrency
+- **Code Quality**: Consistent async/await patterns throughout codebase  
+- **Documentation**: Updated README with current project state
+- **Dependencies**: Cleaned up and updated project dependencies
+
 ## [0.1.0] - 2025-09-11
 
 ### Added
