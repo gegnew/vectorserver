@@ -35,14 +35,13 @@ VectorServer is a document processing and retrieval system that:
 - D = vector dimensionality
 - K = number of partitions/centroids
 
-3. 🟡 Implement the necessary data structures/algorithms to ensure that there
+3. 🟢 Implement the necessary data structures/algorithms to ensure that there
    are no data races between reads and writes to the database.
-   - I chose to use Sqlite to bypass this problem:
-     - Sqlite is [threadsafe](https://sqlite.org/faq.html#q6)
-     - Sqlite is [supports concurrency](https://sqlite.org/faq.html#q5)
-     - This isn't a perfect solution, and reading/writing to Sqlite is certainly
-       slower than storing vectors in memory (or in an in-memory cache).
-     - I've marked this 🟡 because I actually haven't implemented any manual transaction management.
+   - I've used `aiosqlite` to leverage FastAPI's async capabilities and prevent
+     data races. This isn't a very "custom" solution; previously I had
+     implemented the `DB` class as a context manager which handled transactions
+     manually. For SQLite, this is a fine solution, but it doesn't make the most
+     of FastAPI's capabilities.
 4. 🟢 Create the logic to do the CRUD operations on libraries and
    documents/chunks.
    - Most DB operations implemented
@@ -55,9 +54,9 @@ VectorServer is a document processing and retrieval system that:
 ### Extra Points:
 
 1. 🔴 Metadata filtering
-2. 🟡 Persistence to Disk (indexes are currently not persisted to disk)
+2. 🟡 Persistence to Disk (indexes are currently not persisted to disk, must be rebuilt on each app start)
 3. 🔴 Leader-Follower Architecture
-4. 🔴Python SDK Client
+4. 🔴 Python SDK Client
 
 ## Architecture
 
@@ -100,7 +99,7 @@ Library (Collection of related documents)
 
 - Type safety with automatic validation
 - OpenAPI documentation generation
-- High performance async capabilities (largely unused by `VectorDB` class)
+- High performance async capabilities
 
 ## Installation
 
@@ -137,7 +136,7 @@ uv sync
 4. **Initialize Database**
 
 ```bash
-# TODO: script to load data into the database
+# the dev.sqlite database is included in this repository
 ```
 
 ## Usage
@@ -162,21 +161,6 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 The API will be available at `http://localhost:8000` with interactive docs at `/docs`.
 
-<!-- ### Processing Test Documents -->
-<!-- Process the included test documents (Python guide, ML fundamentals, alpine climbing): -->
-<!---->
-<!-- ```bash -->
-<!-- python tests/process_documents.py -->
-<!-- ``` -->
-<!---->
-<!-- This script will: -->
-<!---->
-<!-- 1. Load all `.txt` files from `tests/docs/` -->
-<!-- 2. Create a test library -->
-<!-- 3. Chunk each document intelligently -->
-<!-- 4. Generate embeddings via Cohere API -->
-<!-- 5. Store everything in SQLite -->
-
 ### Running Tests
 
 ```bash
@@ -193,7 +177,7 @@ pytest tests/test_main.py -v
 **Create a Library**
 
 ```bash
-curl -X POST "http://localhost:8000/libraries/" \
+curl -X POST "http://localhost:8000/libraries" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Research Papers",
@@ -205,7 +189,7 @@ curl -X POST "http://localhost:8000/libraries/" \
 **Upload and Process Document**
 
 ```bash
-curl -X POST "http://localhost:8000/libraries/{library_id}/documents/" \
+curl -X POST "http://localhost:8000/libraries/{library_id}/documents" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Attention Is All You Need",
@@ -216,11 +200,13 @@ curl -X POST "http://localhost:8000/libraries/{library_id}/documents/" \
 
 **Semantic Search**
 
-```bash
-curl --header "Content-Type: application/json" \
-  --request POST \
-  --data '{"content":"Assiniboine"}' \
-  http://localhost:8000/search
+```
+curl -X POST "http://localhost:8000/search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Assiniboine",
+    "library_id": "9f9b0b6d-3671-4f9b-a20c-d9e31cc61dba"
+  }'
 ```
 
 ## Project Structure
@@ -233,26 +219,26 @@ vectorserver/
 │   │   ├── document.py
 │   │   └── chunk.py
 │   ├── routes/           # API endpoints
-│   │   └── libraries.py
-│   ├── db.py            # Database operations
-│   ├── embeddings.py    # Cohere embedding integration
-│   ├── settings.py      # Configuration
-│   └── main.py         # FastAPI app
+│   │   ├── libraries.py
+│   │   ├── documents.py
+│   │   └── search.py
+│   ├── repositories      # Database/indexing operations
+│   │   ├── base.py
+│   │   ├── library.py
+│   │   ├── document.py
+│   │   ├── chunk.py
+│   │   ├── vector_index.py
+│   │   └── db.py
+│   ├── embeddings.py     # Cohere embedding integration
+│   ├── settings.py       # Configuration
+│   └── main.py           # FastAPI app
 ├── tests/
-│   ├── docs/           # Test documents
-│   ├── test_db.py      # Database tests
-│   └── process_documents.py  # Document processing script
-├── data/               # SQLite database files
+│   └── *.py
+├── data/                 # SQLite database files
 └── README.md
 ```
 
 ## Key Features
-
-### Intelligent Chunking
-
-- ~Respects sentence and word boundaries~
-- ~Maintains context across segments~
-- Metadata tracking for chunk relationships
 
 ### Vector Search
 
