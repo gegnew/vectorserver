@@ -1,10 +1,14 @@
 import asyncio
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import aiosqlite
 from fastapi import Request
 
 from app.settings import settings
+
+logger = logging.getLogger(__name__)
 
 _TABLES = """
 CREATE TABLE IF NOT EXISTS libraries (
@@ -97,6 +101,42 @@ class DB:
             cursor = await self.conn.execute(query, params or [])
             await self.conn.commit()
             return cursor.rowcount
+
+    async def begin_transaction(self):
+        """Begin a new transaction."""
+        if not self._initialized:
+            await self.initialize()
+        
+        await self.conn.execute("BEGIN TRANSACTION")
+
+    async def commit_transaction(self):
+        """Commit the current transaction."""
+        await self.conn.commit()
+
+    async def rollback_transaction(self):
+        """Rollback the current transaction."""
+        await self.conn.rollback()
+
+    async def execute_in_transaction(self, query: str, params=None):
+        """Execute a query within the current transaction without auto-commit."""
+        if not self._initialized:
+            await self.initialize()
+
+        async with self._write_lock:
+            cursor = await self.conn.execute(query, params or [])
+            return cursor.rowcount
+
+    @asynccontextmanager
+    async def transaction(self):
+        \"\"\"Context manager for database transactions.\"\"\"
+        await self.begin_transaction()
+        try:
+            yield self
+            await self.commit_transaction()
+        except Exception as e:
+            logger.error(f\"Transaction failed, rolling back: {str(e)}\")
+            await self.rollback_transaction()
+            raise
 
     async def close(self):
         if self.conn:

@@ -87,3 +87,30 @@ class LibraryRepository(BaseRepository[Library]):
             "DELETE FROM libraries WHERE id = ?", (str(id),)
         )
         return changes
+
+    async def create_transactional(self, entity: Library, db=None) -> Library:
+        \"\"\"Create a library within an existing transaction.\"\"\"
+        target_db = db or self.db
+        await target_db.execute_in_transaction(
+            \"\"\"
+            INSERT INTO libraries (id, name, description, created_at,
+            updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?)
+            \"\"\",
+            (
+                str(entity.id),
+                entity.name,
+                entity.description,
+                entity.created_at.timestamp(),
+                entity.updated_at.timestamp() if entity.updated_at else None,
+                json.dumps(entity.metadata) if entity.metadata else None,
+            ),
+        )
+        return entity
+
+    async def delete_transactional(self, id: UUID, db=None) -> int:
+        \"\"\"Delete a library within an existing transaction.\"\"\"
+        target_db = db or self.db
+        changes = await target_db.execute_in_transaction(
+            "DELETE FROM libraries WHERE id = ?", (str(id),)
+        )
+        return changes

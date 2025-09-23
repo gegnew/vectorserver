@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 from uuid import UUID
 
-from app.repositories.db import DB
+if TYPE_CHECKING:
+    from app.repositories.db import DB
 
 T = TypeVar("T")
 
@@ -30,4 +33,14 @@ class BaseRepository[T](ABC):
 
     @abstractmethod
     async def delete(self, _id: UUID) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def create_transactional(self, entity: T, db: "DB") -> T:
+        """Create entity within an existing transaction."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def delete_transactional(self, _id: UUID, db: "DB") -> int:
+        """Delete entity within an existing transaction."""
         raise NotImplementedError()

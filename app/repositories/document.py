@@ -101,3 +101,31 @@ class DocumentRepository(BaseRepository[Document]):
             "DELETE FROM documents WHERE id = ?", (str(id),)
         )
         return changes
+
+    async def create_transactional(self, entity: Document, db=None) -> Document:
+        \"\"\"Create a document within an existing transaction.\"\"\"
+        target_db = db or self.db
+        await target_db.execute_in_transaction(
+            \"\"\"
+            INSERT INTO documents (id, title, content, library_id, created_at,
+            updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)
+            \"\"\",
+            (
+                str(entity.id),
+                entity.title,
+                entity.content,
+                str(entity.library_id),
+                entity.created_at.timestamp(),
+                entity.updated_at.timestamp() if entity.updated_at else None,
+                json.dumps(entity.metadata) if entity.metadata else None,
+            ),
+        )
+        return entity
+
+    async def delete_transactional(self, id: UUID, db=None) -> int:
+        \"\"\"Delete a document within an existing transaction.\"\"\"
+        target_db = db or self.db
+        changes = await target_db.execute_in_transaction(
+            "DELETE FROM documents WHERE id = ?", (str(id),)
+        )
+        return changes

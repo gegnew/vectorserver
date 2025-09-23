@@ -27,11 +27,13 @@ class DocumentService:
 
     async def create(self, document: Document) -> Document:
         try:
-            created_doc = await self.docs.create(document)
-            if document.content:
-                chunks = self._chunk_and_embed_document(created_doc)
-                for chunk in chunks:
-                    await self.chunks.create(chunk)
+            # Use transaction to ensure document and chunks are created atomically
+            async with self.db.transaction() as tx_db:
+                created_doc = await self.docs.create_transactional(document, tx_db)
+                if document.content:
+                    chunks = self._chunk_and_embed_document(created_doc)
+                    for chunk in chunks:
+                        await self.chunks.create_transactional(chunk, tx_db)
             return created_doc
         except Exception as e:
             logger.error(f"Failed to create document {document.title}: {str(e)}")
@@ -70,16 +72,18 @@ class DocumentService:
 
             # re-chunk and re-embed if content changed
             if content_changed:
-                # Delete old chunks
-                old_chunks = await self.chunks.find_by_document(document_id)
-                for chunk in old_chunks:
-                    await self.chunks.delete(chunk.id)
+                # Use transaction to ensure chunk operations are atomic
+                async with self.db.transaction() as tx_db:
+                    # Delete old chunks
+                    old_chunks = await self.chunks.find_by_document(document_id)
+                    for chunk in old_chunks:
+                        await self.chunks.delete_transactional(chunk.id, tx_db)
 
-                # create new chunks
-                if content:
-                    chunks = self._chunk_and_embed_document(updated_doc)
-                    for chunk in chunks:
-                        await self.chunks.create(chunk)
+                    # create new chunks
+                    if content:
+                        chunks = self._chunk_and_embed_document(updated_doc)
+                        for chunk in chunks:
+                            await self.chunks.create_transactional(chunk, tx_db)
 
             return updated_doc
         except DocumentNotFoundException:
