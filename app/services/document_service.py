@@ -39,13 +39,17 @@ class DocumentService:
             metadata = {}
         doc = await self.docs.find(document_id)
         if doc:
+            # Check if content is being changed
+            content_changed = content != doc.content
+            
+            # Update document fields
             doc.title = title
             doc.content = content
             doc.metadata = metadata
             updated_doc = await self.docs.update(doc)
 
-            # re-chunk and re-embed
-            if content != doc.content:
+            # re-chunk and re-embed if content changed
+            if content_changed:
                 # Delete old chunks
                 old_chunks = await self.chunks.find_by_document(document_id)
                 for chunk in old_chunks:

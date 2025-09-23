@@ -99,6 +99,16 @@ class ChunkRepository(BaseRepository[Chunk]):
         )
         return [self.to_entity(row) for row in rows]
 
+    async def find_by_document(self, document_id: UUID) -> list[Chunk]:
+        rows = await self.db.read_query(
+            """
+            SELECT id, content, document_id, embedding, created_at, updated_at, metadata
+            FROM chunks WHERE document_id = ?
+            """,
+            (str(document_id),),
+        )
+        return [self.to_entity(row) for row in rows]
+
     async def delete(self, id: UUID) -> int:
         changes = await self.db.write_query(
             "DELETE FROM chunks WHERE id = ?", (str(id),)
