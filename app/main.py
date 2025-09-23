@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from .logger import logger
 from .repositories.db import create_db
-from .routes import chunks_router, libraries_router, search_router
+from .routes import chunks_router, indexes_router, libraries_router, search_router
 from .routes.documents import router as documents_router
 from .settings import settings
 
@@ -28,6 +28,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(chunks_router)
+app.include_router(indexes_router)
 app.include_router(libraries_router)
 app.include_router(search_router)
 app.include_router(documents_router)

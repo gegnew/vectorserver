@@ -84,6 +84,8 @@ class DocumentService:
                         chunks = self._chunk_and_embed_document(updated_doc)
                         for chunk in chunks:
                             await self.chunks.create_transactional(chunk, tx_db)
+                
+                # Note: Caller should invalidate search indexes after this operation
 
             return updated_doc
         except DocumentNotFoundException:
