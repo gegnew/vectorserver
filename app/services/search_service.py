@@ -2,14 +2,17 @@ import logging
 from typing import Literal
 from uuid import UUID
 
+import numpy as np
 from fastapi import Depends
 
 from app.embeddings import Embedder
-from app.exceptions import IndexError
+from app.exceptions import IndexError, ValidationError
 from app.models.document import Document
+from app.models.models import MetadataFilter, SearchResult
 from app.repositories.chunk import ChunkRepository
 from app.repositories.db import DB, get_db
 from app.repositories.document import DocumentRepository
+from app.utils.metadata_filter import MetadataFilterProcessor
 from app.utils.persistent_index import PersistentFlatIndex, PersistentIVFIndex
 
 logger = logging.getLogger(__name__)
@@ -31,8 +34,17 @@ class SearchService:
         library_id: UUID,
         index_type: Literal["flat", "ivf"] = "flat",
         limit: int = 1,
-    ) -> list[Document]:
-        """Search for similar documents in a library using vector similarity."""
+        metadata_filters: list[MetadataFilter] = None,
+    ) -> list[SearchResult]:
+        """Search for similar documents in a library using vector similarity with metadata filtering."""
+        if metadata_filters is None:
+            metadata_filters = []
+            
+        # Validate metadata filters
+        filter_errors = MetadataFilterProcessor.validate_filters(metadata_filters)
+        if filter_errors:
+            raise ValidationError(f"Invalid metadata filters: {'; '.join(filter_errors)}")
+        
         # Get embedding for search text
         embedding = self.embedder.embed([search_text])[0]
         
@@ -41,18 +53,46 @@ class SearchService:
         if not chunks:
             return []
 
+        # Apply metadata filters to chunks first
+        if metadata_filters:
+            chunks = MetadataFilterProcessor.apply_filters(chunks, metadata_filters)
+            if not chunks:
+                return []
+
         # Perform vector search based on index type
-        similar_chunks = self._search_chunks(chunks, embedding, index_type, limit, library_id)
+        similar_chunks = self._search_chunks(chunks, embedding, index_type, limit * 3, library_id)  # Get more chunks to account for document grouping
         
-        # Get unique documents from similar chunks
-        document_ids = list({chunk.document_id for chunk in similar_chunks})
-        documents = []
-        for doc_id in document_ids:
+        # Group chunks by document and calculate scores
+        document_scores = {}
+        document_chunk_counts = {}
+        
+        for i, chunk in enumerate(similar_chunks):
+            doc_id = chunk.document_id
+            # Calculate similarity score (inverse of rank, normalized)
+            score = 1.0 - (i / len(similar_chunks))
+            
+            if doc_id not in document_scores:
+                document_scores[doc_id] = score
+                document_chunk_counts[doc_id] = 1
+            else:
+                # Take the maximum score for the document and count chunks
+                document_scores[doc_id] = max(document_scores[doc_id], score)
+                document_chunk_counts[doc_id] += 1
+        
+        # Get documents and create search results
+        search_results = []
+        for doc_id, score in sorted(document_scores.items(), key=lambda x: x[1], reverse=True)[:limit]:
             doc = await self.docs.find(doc_id)
             if doc:
-                documents.append(doc)
+                # Apply metadata filters to documents as well
+                if not metadata_filters or MetadataFilterProcessor.apply_filters([doc], metadata_filters):
+                    search_results.append(SearchResult(
+                        document=doc,
+                        score=score,
+                        matching_chunks=document_chunk_counts[doc_id]
+                    ))
         
-        return documents
+        return search_results
 
     async def invalidate_index(self, library_id: UUID, index_type: str = None):
         """Invalidate cached indexes for a library."""
