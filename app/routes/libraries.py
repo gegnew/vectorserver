@@ -12,7 +12,7 @@ router = APIRouter(prefix="/libraries", tags=["libraries"])
 async def get_libraries(
     service: LibraryService = Depends(get_library_service),
 ):
-    return await service.find_all()
+    return await service.get_all_libraries()
 
 
 @router.get("/{library_id}", response_model=Library, status_code=status.HTTP_200_OK)
@@ -35,7 +35,7 @@ async def create_library(
     service: LibraryService = Depends(get_library_service),
 ):
     try:
-        lib = await service.create(Library(**library_data.model_dump()))
+        lib = await service.create_library(Library(**library_data.model_dump()))
         return lib
     except Exception as e:
         raise HTTPException(
@@ -61,7 +61,7 @@ async def update_library(
     # Update library with new data
     updated_library_data = library_data.model_dump(exclude_unset=True)
     updated_library_data["id"] = library_id
-    updated_library = await service.update(Library(**updated_library_data))
+    updated_library = await service.update_library(Library(**updated_library_data))
     return updated_library
 
 
@@ -78,7 +78,7 @@ async def delete_library(
             detail=f"Library {library_id} not found"
         )
     
-    deleted = await service.delete(library_id)
+    deleted = await service.delete_library(library_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -86,12 +86,12 @@ async def delete_library(
         )
 
 
-@router.post("/{library_id}/documents", status_code=status.HTTP_201_CREATED)
-async def add_document_to_library(
+@router.get("/{library_id}/documents", response_model=list, status_code=status.HTTP_200_OK)
+async def get_library_documents(
     library_id: UUID,
-    document_data: dict,
     service: LibraryService = Depends(get_library_service),
 ):
+    """Get all documents in a library."""
     # Ensure the library exists first
     existing_library = await service.get_library(library_id)
     if not existing_library:
@@ -100,23 +100,5 @@ async def add_document_to_library(
             detail=f"Library {library_id} not found"
         )
     
-    # Validate required fields
-    if "title" not in document_data or "content" not in document_data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Title and content are required fields"
-        )
-    
-    try:
-        chunks = await service.add_document(
-            library_id=library_id,
-            title=document_data["title"],
-            content=document_data["content"],
-            metadata=document_data.get("metadata", {}),
-        )
-        return {"chunks_created": len(chunks)}
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to add document: {str(e)}"
-        )
+    documents = await service.get_library_documents(library_id)
+    return documents
