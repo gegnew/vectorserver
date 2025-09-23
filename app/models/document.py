@@ -10,8 +10,6 @@ class DocumentBase(BaseModel):
     content: str | None = None
     metadata: dict | None = None
     library_id: UUID
-    created_at: datetime = Field(default=datetime.now(UTC))
-    updated_at: datetime | None = None
 
     @field_validator("metadata", mode="before")
     @classmethod
@@ -23,6 +21,8 @@ class DocumentBase(BaseModel):
 
 class Document(DocumentBase):
     id: UUID = Field(default_factory=uuid4)
+    created_at: datetime = Field(default=datetime.now(UTC))
+    updated_at: datetime | None = None
 
 
 class DocumentGet(DocumentBase):
@@ -33,13 +33,7 @@ class DocumentCreate(DocumentBase):
     pass
 
 
-class DocumentUpdate(DocumentBase):
-    id: UUID
-
-
-class LibraryUpdate(BaseModel):
-    id: UUID
-    title: str
-    content: str
-    metadata: dict
-    library_id: UUID
+class DocumentUpdate(BaseModel):
+    title: str | None = None
+    content: str | None = None
+    metadata: dict | None = None

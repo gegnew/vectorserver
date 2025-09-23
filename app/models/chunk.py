@@ -10,8 +10,6 @@ class ChunkBase(BaseModel):
     embedding: bytes
     metadata: dict | None = None
     document_id: UUID
-    created_at: datetime = Field(default=datetime.now(UTC))
-    updated_at: datetime | None = None
 
     @field_validator("metadata", mode="before")
     @classmethod
@@ -23,6 +21,8 @@ class ChunkBase(BaseModel):
 
 class Chunk(ChunkBase):
     id: UUID = Field(default_factory=uuid4)
+    created_at: datetime = Field(default=datetime.now(UTC))
+    updated_at: datetime | None = None
 
 
 class ChunkGet(ChunkBase):
@@ -33,9 +33,7 @@ class ChunkCreate(ChunkBase):
     pass
 
 
-class ChunkUpdate(ChunkBase):
-    id: UUID
-    content: str
-    embedding: bytes
-    metadata: dict | None
-    document_id: UUID
+class ChunkUpdate(BaseModel):
+    content: str | None = None
+    embedding: bytes | None = None
+    metadata: dict | None = None

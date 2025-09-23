@@ -35,7 +35,6 @@ class LibraryCreate(LibraryBase):
 
 
 class LibraryUpdate(BaseModel):
-    id: UUID
-    name: str
-    description: str
-    metadata: dict | None
+    name: str | None = None
+    description: str | None = None
+    metadata: dict | None = None
