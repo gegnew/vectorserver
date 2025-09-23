@@ -108,27 +108,30 @@ class DocumentService:
 
     def _chunk_and_embed_document(self, document: Document) -> list[Chunk]:
         try:
-            chunks, embeddings, chunk_lens = self.embedder.chunk_and_embed(document.content)
+            chunks, embeddings, chunk_lens, chunk_metadatas = self.embedder.chunk_and_embed(document.content)
 
             chunk_objects = []
-            for j, (chunk, embedding, chunk_len) in enumerate(
-                zip(chunks, embeddings, chunk_lens, strict=False)
+            for j, (chunk, embedding, chunk_len, chunk_metadata) in enumerate(
+                zip(chunks, embeddings, chunk_lens, chunk_metadatas, strict=False)
             ):
                 embedding_bytes = embedding.tobytes()
+
+                # Merge chunking metadata with embedding metadata
+                combined_metadata = {
+                    **chunk_metadata,  # Smart chunker metadata
+                    "embedding_model": self.embedder.model,
+                    "embedding_dimension": len(embedding),
+                    "dtype": str(embedding.dtype),
+                    "document_title": document.title,
+                    "document_id": str(document.id),
+                }
 
                 chunk_objects.append(
                     Chunk(
                         content=chunk,
                         document_id=document.id,
                         embedding=embedding_bytes,
-                        metadata={
-                            "chunk_number": j,
-                            "total_chunks": len(chunks),
-                            "character_count": chunk_len,
-                            "embedding_model": self.embedder.model,
-                            "embedding_dimension": len(embedding),
-                            "dtype": str(embedding.dtype),
-                        },
+                        metadata=combined_metadata,
                     )
                 )
             return chunk_objects
