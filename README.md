@@ -60,6 +60,49 @@ VectorServer is a document processing and retrieval system that:
 
 ## Architecture
 
+### System Overview
+
+```mermaid
+graph TB
+    C[HTTP Clients] --> MAIN[main.py]
+    API_DOCS[Swagger UI] --> MAIN
+    
+    MAIN --> LIB_R[libraries.py]
+    MAIN --> DOC_R[documents.py]
+    MAIN --> CHUNK_R[chunks.py]
+    MAIN --> SEARCH_R[search.py]
+    MAIN --> INDEX_R[indexes.py]
+    
+    LIB_R --> LIB_S[LibraryService]
+    DOC_R --> DOC_S[DocumentService]
+    CHUNK_R --> CHUNK_S[ChunkService]
+    SEARCH_R --> SEARCH_S[SearchService]
+    INDEX_R --> SEARCH_S
+    
+    LIB_S --> LIB_REPO[LibraryRepository]
+    DOC_S --> DOC_REPO[DocumentRepository]
+    DOC_S --> CHUNK_REPO[ChunkRepository]
+    CHUNK_S --> CHUNK_REPO
+    SEARCH_S --> CHUNK_REPO
+    SEARCH_S --> DOC_REPO
+    SEARCH_S --> VECTOR_REPO[VectorIndexRepository]
+    
+    LIB_REPO --> DB[Database Manager]
+    DOC_REPO --> DB
+    CHUNK_REPO --> DB
+    DB --> SQLITE[(SQLite)]
+    
+    DOC_S --> EMBEDDER[Embedder]
+    DOC_S --> CHUNKER[SmartChunker]
+    SEARCH_S --> EMBEDDER
+    EMBEDDER --> COHERE[Cohere API]
+    
+    VECTOR_REPO --> FLAT[FlatIndex]
+    VECTOR_REPO --> IVF[IVF Index]
+    SEARCH_S --> PERSISTENT[PersistentIndex]
+    PERSISTENT --> DISK[Disk Storage]
+```
+
 ### Data Model
 
 The system uses a three-tier hierarchical structure:
@@ -71,8 +114,34 @@ Library (Collection of related documents)
 ```
 
 **Libraries**: Top-level collections for organizing documents by topic, project, or source
-**Documents**: Individual text files or content with metadata
+**Documents**: Individual text files or content with metadata  
 **Chunks**: Text segments (~500 characters) with vector embeddings for semantic search
+
+### Component Details
+
+#### API Layer
+- **FastAPI Application**: Async web framework with automatic OpenAPI documentation
+- **Route Handlers**: RESTful endpoints for CRUD operations and search
+- **Dependency Injection**: Service instances provided via FastAPI's dependency system
+
+#### Service Layer  
+- **Business Logic**: Document processing, search orchestration, and entity management
+- **Transaction Management**: Coordinates database operations across repositories
+- **Integration Points**: Connects external APIs (Cohere) with internal systems
+
+#### Repository Layer
+- **Data Access**: Abstract database operations with consistent interfaces
+- **Connection Management**: Thread-safe SQLite connections with read/write separation
+- **Vector Operations**: Specialized repositories for embedding storage and retrieval
+
+#### Vector Processing
+- **Smart Chunking**: Intelligent text segmentation with boundary detection
+- **Embedding Generation**: Cohere API integration for vector embeddings
+- **Index Management**: Multiple indexing strategies (Flat, IVF) with persistence
+
+#### Data Layer
+- **SQLite Database**: Lightweight, serverless database with foreign key constraints
+- **Persistent Storage**: Disk-based index caching for improved startup performance
 
 ### Technical Choices
 
