@@ -47,33 +47,37 @@ async def service_with_documents():
     db = await create_db()
     service = LibraryService(db)
 
-    docs_dir = Path("tests/docs/")
-    library = await service.create_library(
-        Library(
-            name="Test Document Library",
-            description="""
-                Library containing test documents for chunking and embedding
-                """,
-            metadata={
-                "source": "test_documents",
-                "processed_by": "pytest",
-            },
+    try:
+        docs_dir = Path("tests/docs/")
+        library = await service.create_library(
+            Library(
+                name="Test Document Library",
+                description="""
+                    Library containing test documents for chunking and embedding
+                    """,
+                metadata={
+                    "source": "test_documents",
+                    "processed_by": "pytest",
+                },
+            )
         )
-    )
 
-    documents = load_documents_from_directory(docs_dir)
+        documents = load_documents_from_directory(docs_dir)
 
-    for doc_name, content in documents:
-        await service.add_document(
-            title=doc_name,
-            content=content,
-            library_id=library.id,
-            metadata={
-                "original_length": len(content),
-                "source_file": f"{doc_name}.txt",
-            },
-        )
-    return service
+        for doc_name, content in documents:
+            await service.add_document(
+                title=doc_name,
+                content=content,
+                library_id=library.id,
+                metadata={
+                    "original_length": len(content),
+                    "source_file": f"{doc_name}.txt",
+                },
+            )
+        yield service
+    finally:
+        # Properly close the database connection
+        await db.close()
 
 
 def create_test_chunk(i: int, embedding_dim: int = 128) -> Chunk:
