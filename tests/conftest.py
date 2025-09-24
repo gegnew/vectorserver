@@ -19,7 +19,7 @@ def setup_test_env():
     from app import settings
 
     original_db_path = settings.settings.db_path
-    settings.settings.db_path = "data/test.sqlite"
+    settings.settings.db_path = "data/dev.sqlite"
     yield
     # Clean up test database after each test
     test_db_path = Path("data/test.sqlite")

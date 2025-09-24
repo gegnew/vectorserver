@@ -23,14 +23,16 @@ class Document(BaseEntityModel, DocumentBase):
 
 class DocumentGet(DocumentBase):
     """Document model for GET responses."""
-
-    pass
+    
+    # Include metadata and timestamps for complete response
+    metadata: dict | None = None
 
 
 class DocumentCreate(DocumentBase):
     """Document model for creation requests."""
-
-    pass
+    
+    # Include metadata field for creation
+    metadata: dict | None = None
 
 
 class DocumentUpdate(BaseModel):

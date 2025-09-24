@@ -22,12 +22,16 @@ class Library(BaseEntityModel, LibraryBase):
 
 class LibraryGet(LibraryBase):
     """Library model for GET responses."""
-
-    pass
+    
+    # Include metadata for complete response
+    metadata: dict | None = None
 
 
 class LibraryCreate(LibraryBase):
     """Library model for creation requests."""
+    
+    # Include metadata field for creation
+    metadata: dict | None = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -35,10 +39,12 @@ class LibraryCreate(LibraryBase):
                 {
                     "name": "Research Papers",
                     "description": "Collection of machine learning research papers",
+                    "metadata": {"source": "arxiv", "category": "ML"}
                 },
                 {
-                    "name": "Technical Documentation",
+                    "name": "Technical Documentation", 
                     "description": "Internal API and system documentation",
+                    "metadata": {"type": "internal", "team": "engineering"}
                 },
             ]
         }

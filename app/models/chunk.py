@@ -23,14 +23,16 @@ class Chunk(BaseEntityModel, ChunkBase):
 
 class ChunkGet(ChunkBase):
     """Chunk model for GET responses."""
-
-    pass
+    
+    # Include metadata for complete response
+    metadata: dict | None = None
 
 
 class ChunkCreate(ChunkBase):
     """Chunk model for creation requests."""
-
-    pass
+    
+    # Include metadata field for creation
+    metadata: dict | None = None
 
 
 class ChunkUpdate(BaseModel):

@@ -39,9 +39,9 @@ class TestEndToEnd:
         assert updated_library["name"] == "Updated E2E Library"
         assert updated_library["description"] == "Updated description"
 
-        response = client.delete("/libraries", params={"id": library_id})
-        assert response.status_code == 202
-        assert response.json()["deleted"] == 1
+        response = client.delete(f"/libraries/{library_id}")
+        assert response.status_code == 204
+        # 204 No Content means successful deletion with no response body
 
     @pytest.mark.parametrize("index_type", ["flat", "ivf"])
     def test_document_indexing_and_search(self, client, index_type):
@@ -97,8 +97,8 @@ class TestEndToEnd:
             assert "content" in first_result["document"]
             assert "title" in first_result["document"]
 
-        response = client.delete("/libraries", params={"id": library_id})
-        assert response.status_code == 202
+        response = client.delete(f"/libraries/{library_id}")
+        assert response.status_code == 204
 
     def test_full_workflow_integration(self, client):
         library_data = {
@@ -142,7 +142,9 @@ class TestEndToEnd:
             assert "document" in first_result
             assert "content" in first_result["document"]
 
-            healthcare_found = "healthcare" in first_result["document"].get("content", "").lower()
+            healthcare_found = (
+                "healthcare" in first_result["document"].get("content", "").lower()
+            )
             assert (
                 healthcare_found
             ), f"Healthcare content not found in {index_type} search results"
@@ -152,5 +154,5 @@ class TestEndToEnd:
             docs = response.json()
             assert len(docs) == len(documents)
 
-        response = client.delete("/libraries", params={"id": library_id})
-        assert response.status_code == 202
+        response = client.delete(f"/libraries/{library_id}")
+        assert response.status_code == 204
