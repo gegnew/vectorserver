@@ -53,8 +53,8 @@ VectorServer is a document processing and retrieval system that:
 
 ### Extra Points:
 
-1. 🔴 Metadata filtering
-2. 🟡 Persistence to Disk (indexes are currently not persisted to disk, must be rebuilt on each app start)
+1. 🟢 Metadata filtering
+2. 🟢 Persistence to Disk (indexes are currently not persisted to disk, must be rebuilt on each app start)
 3. 🔴 Leader-Follower Architecture
 4. 🔴 Python SDK Client
 
