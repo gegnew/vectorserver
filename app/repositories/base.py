@@ -41,6 +41,21 @@ class BaseRepository[T](ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    async def update_transactional(self, entity: T, db: DB) -> T | None:
+        """Update entity within an existing transaction."""
+        raise NotImplementedError()
+
+    @abstractmethod
     async def delete_transactional(self, _id: UUID, db: DB) -> int:
         """Delete entity within an existing transaction."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def find_transactional(self, _id: UUID, db: DB) -> T | None:
+        """Find entity within an existing transaction."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def find_all_transactional(self, db: DB) -> Sequence[T]:
+        """Find all entities within an existing transaction."""
         raise NotImplementedError()

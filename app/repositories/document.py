@@ -122,6 +122,32 @@ class DocumentRepository(BaseRepository[Document]):
         )
         return entity
 
+    async def update_transactional(self, entity: Document, db=None) -> Document | None:
+        """Update a document within an existing transaction."""
+        target_db = db or self.db
+        changes = await target_db.execute_in_transaction(
+            """
+            UPDATE documents
+               SET title = ?,
+               content = ?,
+               library_id = ?,
+               updated_at = ?,
+               metadata = ?
+             WHERE documents.id = ?;
+            """,
+            (
+                entity.title,
+                entity.content,
+                str(entity.library_id),
+                datetime.now(UTC).timestamp(),
+                json.dumps(entity.metadata) if entity.metadata else None,
+                str(entity.id),
+            ),
+        )
+        if changes != 1:
+            raise KeyError(entity.id)
+        return entity
+
     async def delete_transactional(self, id: UUID, db=None) -> int:
         """Delete a document within an existing transaction."""
         target_db = db or self.db
@@ -129,3 +155,11 @@ class DocumentRepository(BaseRepository[Document]):
             "DELETE FROM documents WHERE id = ?", (str(id),)
         )
         return changes
+
+    async def find_transactional(self, id: UUID, db=None) -> Document | None:
+        """Find a document within an existing transaction."""
+        return await self.find(id)
+
+    async def find_all_transactional(self, db=None) -> Sequence[Document]:
+        """Find all documents within an existing transaction."""
+        return await self.find_all()

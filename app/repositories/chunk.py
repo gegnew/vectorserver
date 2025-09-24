@@ -135,6 +135,32 @@ class ChunkRepository(BaseRepository[Chunk]):
         )
         return entity
 
+    async def update_transactional(self, entity: Chunk, db=None) -> Chunk | None:
+        """Update a chunk within an existing transaction."""
+        target_db = db or self.db
+        changes = await target_db.execute_in_transaction(
+            """
+            UPDATE chunks
+               SET content = ?,
+               document_id = ?,
+               embedding = ?,
+               updated_at = ?,
+               metadata = ?
+             WHERE chunks.id = ?;
+            """,
+            (
+                entity.content,
+                str(entity.document_id),
+                entity.embedding,
+                datetime.now(UTC).timestamp(),
+                json.dumps(entity.metadata) if entity.metadata else None,
+                str(entity.id),
+            ),
+        )
+        if changes != 1:
+            raise KeyError(entity.id)
+        return entity
+
     async def delete_transactional(self, id: UUID, db=None) -> int:
         """Delete a chunk within an existing transaction."""
         target_db = db or self.db
@@ -142,3 +168,11 @@ class ChunkRepository(BaseRepository[Chunk]):
             "DELETE FROM chunks WHERE id = ?", (str(id),)
         )
         return changes
+
+    async def find_transactional(self, id: UUID, db=None) -> Chunk | None:
+        """Find a chunk within an existing transaction."""
+        return await self.find(id)
+
+    async def find_all_transactional(self, db=None) -> Sequence[Chunk]:
+        """Find all chunks within an existing transaction."""
+        return await self.find_all()

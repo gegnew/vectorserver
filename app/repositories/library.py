@@ -107,6 +107,30 @@ class LibraryRepository(BaseRepository[Library]):
         )
         return entity
 
+    async def update_transactional(self, entity: Library, db=None) -> Library | None:
+        """Update a library within an existing transaction."""
+        target_db = db or self.db
+        changes = await target_db.execute_in_transaction(
+            """
+            UPDATE libraries
+               SET name = ?,
+               description = ?,
+               updated_at = ?,
+               metadata = ?
+             WHERE libraries.id = ?;
+            """,
+            (
+                entity.name,
+                entity.description,
+                datetime.now(UTC).timestamp(),
+                json.dumps(entity.metadata) if entity.metadata else None,
+                str(entity.id),
+            ),
+        )
+        if changes != 1:
+            raise KeyError(entity.id)
+        return entity
+
     async def delete_transactional(self, id: UUID, db=None) -> int:
         """Delete a library within an existing transaction."""
         target_db = db or self.db
@@ -114,3 +138,15 @@ class LibraryRepository(BaseRepository[Library]):
             "DELETE FROM libraries WHERE id = ?", (str(id),)
         )
         return changes
+
+    async def find_transactional(self, id: UUID, db=None) -> Library | None:
+        """Find a library within an existing transaction."""
+        target_db = db or self.db
+        # Note: For reads, we can use regular read methods as they don't need transaction isolation
+        return await self.find(id)
+
+    async def find_all_transactional(self, db=None) -> Sequence[Library]:
+        """Find all libraries within an existing transaction."""
+        target_db = db or self.db
+        # Note: For reads, we can use regular read methods as they don't need transaction isolation
+        return await self.find_all()
