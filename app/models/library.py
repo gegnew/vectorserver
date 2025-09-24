@@ -1,6 +1,6 @@
 """Library models with proper inheritance and validation."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from .base import BaseEntityModel
 
@@ -8,8 +8,10 @@ from .base import BaseEntityModel
 class LibraryBase(BaseModel):
     """Base library model with common fields."""
 
-    name: str
-    description: str | None = None
+    name: str = Field(..., min_length=1, max_length=255, description="Library name")
+    description: str | None = Field(
+        None, max_length=1000, description="Optional library description"
+    )
 
 
 class Library(BaseEntityModel, LibraryBase):
@@ -27,7 +29,20 @@ class LibraryGet(LibraryBase):
 class LibraryCreate(LibraryBase):
     """Library model for creation requests."""
 
-    pass
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "name": "Research Papers",
+                    "description": "Collection of machine learning research papers",
+                },
+                {
+                    "name": "Technical Documentation",
+                    "description": "Internal API and system documentation",
+                },
+            ]
+        }
+    )
 
 
 class LibraryUpdate(BaseModel):

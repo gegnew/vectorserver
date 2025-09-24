@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .base import BaseEntityModel
 
@@ -10,9 +10,9 @@ from .base import BaseEntityModel
 class DocumentBase(BaseModel):
     """Base document model with common fields."""
 
-    title: str
-    content: str | None = None
-    library_id: UUID
+    title: str = Field(..., min_length=1, max_length=500, description="Document title")
+    content: str | None = Field(None, max_length=50000, description="Document content")
+    library_id: UUID = Field(..., description="ID of the parent library")
 
 
 class Document(BaseEntityModel, DocumentBase):

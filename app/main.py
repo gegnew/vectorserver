@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from .logger import logger
+from .models.responses import HealthCheck
 from .repositories.db import create_db
 from .routes import chunks_router, indexes_router, libraries_router, search_router
 from .routes.documents import router as documents_router
@@ -43,11 +44,20 @@ async def root():
     }
 
 
-@app.get("/health")
+@app.get("/health", response_model=HealthCheck)
 async def health_check():
+    """Comprehensive health check endpoint."""
     logger.info("Health check accessed")
-    return {
-        "status": "healthy",
-        "service": settings.app_title,
-        "version": settings.app_version,
-    }
+
+    # Check database connectivity
+    try:
+        # Simple database check - could be enhanced with actual health query
+        db_status = "healthy" if app.state.db else "unhealthy"
+    except Exception:
+        db_status = "unhealthy"
+
+    return HealthCheck(
+        status="healthy" if db_status == "healthy" else "degraded",
+        version=settings.app_version,
+        services={"database": db_status, "api": "healthy"},
+    )
