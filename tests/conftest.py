@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -13,6 +14,21 @@ from app.services.library_service import LibraryService
 from app.utils.load_documents import load_documents_from_directory
 
 
+@pytest.fixture(scope="function", autouse=True)
+def setup_test_env():
+    """Set up test environment to use a separate test database."""
+    from app import settings
+    original_db_path = settings.settings.db_path
+    settings.settings.db_path = "data/test.sqlite"
+    yield
+    # Clean up test database after each test
+    test_db_path = Path("data/test.sqlite")
+    if test_db_path.exists():
+        test_db_path.unlink()
+    # Restore original setting
+    settings.settings.db_path = original_db_path
+
+
 @pytest.fixture
 def client():
     with TestClient(app) as client:
@@ -26,7 +42,9 @@ async def service_with_documents():
     Spins up and down for each class; this is a bit slow, but we can optimize it later.
     """
     from app.repositories.db import create_db
-
+    from app import settings
+    
+    # Use the same database path as tests
     db = await create_db()
     service = LibraryService(db)
 

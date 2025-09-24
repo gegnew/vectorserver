@@ -23,15 +23,15 @@ class TestSecurity:
 
     def test_request_size_limits(self, client: TestClient):
         """Test request size limits."""
-        # Create a large payload
+        # Create a large payload that violates validation rules
         large_data = {
             "name": "Test Library",
-            "description": "x" * 1000000,  # 1MB description
+            "description": "x" * 1500,  # Over 1000 char limit
         }
 
         response = client.post("/libraries", json=large_data)
-        # Should either succeed or fail gracefully
-        assert response.status_code in [201, 413, 422]
+        # Should fail validation (422) or payload too large (413)
+        assert response.status_code in [413, 422]
 
     def test_input_validation(self, client: TestClient):
         """Test input validation works properly."""

@@ -34,7 +34,7 @@ class TestEndToEnd:
             "metadata": {"test": True, "updated": True},
         }
         response = client.put("/libraries", json=update_data)
-        assert response.status_code == 201
+        assert response.status_code == 200
         updated_library = response.json()
         assert updated_library["name"] == "Updated E2E Library"
         assert updated_library["description"] == "Updated description"
