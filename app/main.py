@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 
 from .logger import logger
 from .models.responses import HealthCheck
@@ -41,21 +42,16 @@ app.include_router(search_router)
 app.include_router(documents_router)
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
     logger.info("Root endpoint accessed")
-    return {
-        "message": "Vector Database API is running",
-        "version": settings.app_version,
-    }
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health", response_model=HealthCheck)
 async def health_check():
-    """Comprehensive health check endpoint."""
     logger.info("Health check accessed")
 
-    # Check database connectivity
     try:
         # Simple database check - could be enhanced with actual health query
         db_status = "healthy" if app.state.db else "unhealthy"

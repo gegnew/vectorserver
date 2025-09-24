@@ -56,7 +56,7 @@ class SearchText(BaseModel):
 class SearchResult(BaseModel):
     """Search result with similarity score."""
 
-    document: "Document"
+    document: Document
     score: float = Field(
         ..., description="Similarity score (0-1, higher is more similar)"
     )

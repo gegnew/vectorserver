@@ -141,12 +141,10 @@ class LibraryRepository(BaseRepository[Library]):
 
     async def find_transactional(self, id: UUID, db=None) -> Library | None:
         """Find a library within an existing transaction."""
-        target_db = db or self.db
         # Note: For reads, we can use regular read methods as they don't need transaction isolation
         return await self.find(id)
 
     async def find_all_transactional(self, db=None) -> Sequence[Library]:
         """Find all libraries within an existing transaction."""
-        target_db = db or self.db
         # Note: For reads, we can use regular read methods as they don't need transaction isolation
         return await self.find_all()

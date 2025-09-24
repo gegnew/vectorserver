@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -18,6 +17,7 @@ from app.utils.load_documents import load_documents_from_directory
 def setup_test_env():
     """Set up test environment to use a separate test database."""
     from app import settings
+
     original_db_path = settings.settings.db_path
     settings.settings.db_path = "data/test.sqlite"
     yield
@@ -42,8 +42,7 @@ async def service_with_documents():
     Spins up and down for each class; this is a bit slow, but we can optimize it later.
     """
     from app.repositories.db import create_db
-    from app import settings
-    
+
     # Use the same database path as tests
     db = await create_db()
     service = LibraryService(db)
