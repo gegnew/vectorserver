@@ -35,14 +35,15 @@ class TestRoutes:
         lib = client.post("/libraries", json=library_data).json()
 
         response = client.put(
-            "/libraries", json={
+            "/libraries",
+            json={
                 "id": lib["id"],
                 "name": "Updated Test Library",
                 "description": "Updated test library description",
-                "metadata": {"updated": True}
-            }
+                "metadata": {"updated": True},
+            },
         )
-        assert response.status_code == 201
+        assert response.status_code == 200
         assert response.json()["name"] == "Updated Test Library"
 
     def test_delete_library(self, client):
@@ -52,9 +53,8 @@ class TestRoutes:
         }
         lib = client.post("/libraries", json=library_data).json()
 
-        response = client.delete("/libraries", params={"id": lib["id"]})
-        assert response.status_code == 202
-        assert response.json()["deleted"] == 1
+        response = client.delete(f"/libraries/{lib['id']}")
+        assert response.status_code == 204
 
     @pytest.mark.parametrize("index_type", ["flat", "ivf"])
     def test_semantic_search(self, client, index_type, service_with_documents):

@@ -18,23 +18,16 @@ async def search_similar(
             library_id=search_data.library_id,
             index_type=search_data.index_type,
             limit=search_data.limit,
-            metadata_filters=search_data.metadata_filters
+            metadata_filters=search_data.metadata_filters,
         )
 
-        if not search_results:
-            raise HTTPException(
-                status_code=404,
-                detail="No matching documents found for the search query"
-            )
-
-        return search_results
+        return search_results or []
     except ValidationError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Search failed: {str(e)}"
-        )
+            detail=f"Search failed: {str(e)}",
+        ) from e

@@ -5,7 +5,7 @@ from fastapi import Depends
 
 from app.models.chunk import Chunk, ChunkUpdate
 from app.repositories.chunk import ChunkRepository
-from app.repositories.db import get_database
+from app.repositories.db import get_db
 
 
 class ChunkService:
@@ -25,7 +25,9 @@ class ChunkService:
         """Get all chunks for a specific library."""
         return await self.chunk_repo.find_by_library(library_id)
 
-    async def update_chunk(self, chunk_id: UUID, chunk_update: ChunkUpdate) -> Chunk | None:
+    async def update_chunk(
+        self, chunk_id: UUID, chunk_update: ChunkUpdate
+    ) -> Chunk | None:
         """Update an existing chunk."""
         # First get the existing chunk
         existing_chunk = await self.chunk_repo.find(chunk_id)
@@ -34,12 +36,11 @@ class ChunkService:
 
         # Update only the fields that were provided
         update_data = chunk_update.model_dump(exclude_unset=True)
-        
+
         # Create updated chunk with new values
-        updated_chunk = existing_chunk.model_copy(update={
-            **update_data,
-            'updated_at': datetime.now(UTC)
-        })
+        updated_chunk = existing_chunk.model_copy(
+            update={**update_data, "updated_at": datetime.now(UTC)}
+        )
 
         return await self.chunk_repo.update(updated_chunk)
 
@@ -48,7 +49,7 @@ class ChunkService:
         return await self.chunk_repo.delete(chunk_id)
 
 
-def get_chunk_service(db=Depends(get_database)) -> ChunkService:
+def get_chunk_service(db=Depends(get_db)) -> ChunkService:
     """Dependency to get ChunkService instance."""
     chunk_repo = ChunkRepository(db)
     return ChunkService(chunk_repo)

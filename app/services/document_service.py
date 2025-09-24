@@ -60,10 +60,10 @@ class DocumentService:
             doc = await self.docs.find(document_id)
             if not doc:
                 raise DocumentNotFoundException(document_id)
-                
+
             # Check if content is being changed
             content_changed = content != doc.content
-            
+
             # Update document fields
             doc.title = title
             doc.content = content
@@ -84,7 +84,7 @@ class DocumentService:
                         chunks = self._chunk_and_embed_document(updated_doc)
                         for chunk in chunks:
                             await self.chunks.create_transactional(chunk, tx_db)
-                
+
                 # Note: Caller should invalidate search indexes after this operation
 
             return updated_doc
@@ -108,10 +108,12 @@ class DocumentService:
 
     def _chunk_and_embed_document(self, document: Document) -> list[Chunk]:
         try:
-            chunks, embeddings, chunk_lens, chunk_metadatas = self.embedder.chunk_and_embed(document.content)
+            (chunks, embeddings, chunk_lens, chunk_metadatas) = (
+                self.embedder.chunk_and_embed(document.content)
+            )
 
             chunk_objects = []
-            for j, (chunk, embedding, chunk_len, chunk_metadata) in enumerate(
+            for _j, (chunk, embedding, _chunk_len, chunk_metadata) in enumerate(
                 zip(chunks, embeddings, chunk_lens, chunk_metadatas, strict=False)
             ):
                 embedding_bytes = embedding.tobytes()
