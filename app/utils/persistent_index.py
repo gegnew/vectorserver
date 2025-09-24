@@ -20,6 +20,7 @@ class PersistentVectorIndex:
     """Base class for persistent vector indexes."""
 
     def __init__(self, storage_path: str):
+        """Initialize persistent vector index with storage path."""
         self.storage_path = Path(storage_path)
         self.storage_path.mkdir(parents=True, exist_ok=True)
 

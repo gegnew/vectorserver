@@ -13,6 +13,7 @@ router = APIRouter(prefix="/libraries", tags=["libraries"])
 async def get_libraries(
     service: LibraryService = Depends(get_library_service),
 ):
+    """Get all libraries."""
     return await service.get_all_libraries()
 
 

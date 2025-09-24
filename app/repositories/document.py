@@ -9,6 +9,7 @@ from app.repositories.base import BaseRepository
 
 class DocumentRepository(BaseRepository[Document]):
     def to_entity(self, row):
+        """Convert database row to Document entity."""
         return Document(
             id=UUID(row[0]),
             title=row[1],

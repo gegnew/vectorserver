@@ -7,12 +7,14 @@ from .utils.smart_chunker import SmartChunker
 
 class Embedder:
     def __init__(self):
+        """Initialize the Embedder with Cohere client and default settings."""
         self.co = cohere.ClientV2(api_key=settings.cohere_api_key)
         self.model = "embed-v4.0"
         self.input_type = "search_query"
         self.chunker = SmartChunker.create_optimized_for_embeddings()
 
     def embed(self, phrases: list[str]):
+        """Generate embeddings for a list of text phrases using Cohere's embed model."""
         res = self.co.embed(
             texts=phrases,
             model=self.model,
@@ -28,9 +30,7 @@ class Embedder:
         return [(chunk_text, metadata) for chunk_text, metadata in chunks_with_metadata]
 
     def chunk_and_embed(self, content: str):
-        """
-        Load, chunk, embed, and store in database with smart chunking.
-        """
+        """Load, chunk, embed, and store in database with smart chunking."""
         chunks_with_metadata = self._chunk_text(content)
 
         if not chunks_with_metadata:
@@ -47,6 +47,7 @@ class Embedder:
         return chunks, embeddings, chunk_lens, metadatas
 
     def cosine_similarity(self, query, vectors, k: int = 5):
+        """Calculate cosine similarity between query and vectors, returning top k matches."""
         sims = np.squeeze(
             np.dot(query, vectors)
             / (np.linalg.norm(query) * (np.linalg.norm(vectors))).T

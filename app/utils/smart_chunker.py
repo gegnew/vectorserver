@@ -13,15 +13,7 @@ class SmartChunker:
         min_chunk_size: int = 100,
         max_chunk_size: int = 1000,
     ):
-        """
-        Initialize the smart chunker.
-
-        Args:
-            chunk_size: Target size for each chunk in characters
-            overlap_size: Number of characters to overlap between chunks
-            min_chunk_size: Minimum chunk size to avoid very small chunks
-            max_chunk_size: Maximum chunk size to avoid very large chunks
-        """
+        """Initialize the smart chunker with size and overlap parameters."""
         self.chunk_size = chunk_size
         self.overlap_size = overlap_size
         self.min_chunk_size = min_chunk_size
@@ -39,12 +31,7 @@ class SmartChunker:
         ]
 
     def chunk_text(self, text: str) -> list[tuple[str, dict]]:
-        """
-        Split text into overlapping chunks with intelligent boundary detection.
-
-        Returns:
-            List of tuples (chunk_text, metadata)
-        """
+        """Split text into overlapping chunks with intelligent boundary detection and return list of (chunk_text, metadata) tuples."""
         if not text or len(text) <= self.min_chunk_size:
             return [(text, self._create_chunk_metadata(0, len(text), 0, 1))]
 
@@ -145,12 +132,7 @@ class SmartChunker:
     def get_chunk_overlap(
         self, chunks: list[tuple[str, dict]], chunk_index: int
     ) -> tuple[str, str]:
-        """
-        Get the overlapping text between a chunk and its neighbors.
-
-        Returns:
-            Tuple of (overlap_with_previous, overlap_with_next)
-        """
+        """Get the overlapping text between a chunk and its neighbors and return (overlap_with_previous, overlap_with_next) tuple."""
         if chunk_index < 0 or chunk_index >= len(chunks):
             return "", ""
 

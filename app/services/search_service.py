@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class SearchService:
     def __init__(self, db: DB):
+        """Initialize SearchService with database connection, embedder, and vector indexes."""
         self.db = db
         self.embedder = Embedder()
         self.chunks = ChunkRepository(self.db)

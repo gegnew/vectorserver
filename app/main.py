@@ -19,6 +19,7 @@ SearchResult.model_rebuild()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Manage FastAPI application lifespan for database connections."""
     logger.info("Initializing database connection...")
     app.state.db = await create_db()
     logger.info("Vector Database API startup complete")
@@ -44,12 +45,14 @@ app.include_router(documents_router)
 
 @app.get("/", include_in_schema=False)
 async def root():
+    """Redirect root requests to API documentation."""
     logger.info("Root endpoint accessed")
     return RedirectResponse(url="/docs")
 
 
 @app.get("/health", response_model=HealthCheck)
 async def health_check():
+    """Return API and database health status."""
     logger.info("Health check accessed")
 
     try:

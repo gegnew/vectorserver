@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS chunks (
 
 class DB:
     def __init__(self, db_path: str):
+        """Initialize database connection manager with path and concurrency controls."""
         self.db_path = db_path
         self.conn: aiosqlite.Connection | None = None
         self._read_semaphore = asyncio.Semaphore(10)  # 10 concurrent reads
@@ -78,6 +79,7 @@ class DB:
             raise
 
     async def read_query(self, query: str, params=None):
+        """Execute a SELECT query and return all results."""
         if not self._initialized:
             await self.initialize()
 
@@ -86,6 +88,7 @@ class DB:
                 return await cursor.fetchall()
 
     async def read_one(self, query: str, params=None):
+        """Execute a SELECT query and return a single result."""
         if not self._initialized:
             await self.initialize()
 
@@ -94,6 +97,7 @@ class DB:
                 return await cursor.fetchone()
 
     async def write_query(self, query: str, params=None):
+        """Execute an INSERT, UPDATE, or DELETE query with auto-commit."""
         if not self._initialized:
             await self.initialize()
 
@@ -139,6 +143,7 @@ class DB:
             raise
 
     async def close(self):
+        """Close database connection and reset initialization state."""
         if self.conn:
             await self.conn.close()
             self.conn = None

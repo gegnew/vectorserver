@@ -13,6 +13,7 @@ T = TypeVar("T")
 
 class BaseRepository[T](ABC):
     def __init__(self, db: DB) -> None:
+        """Initialize repository with database connection."""
         self.db = db
 
     @abstractmethod

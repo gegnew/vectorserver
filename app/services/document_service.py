@@ -15,11 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 def get_document_service(db: DB = Depends(get_db)):
+    """Dependency to get DocumentService instance."""
     return DocumentService(db)
 
 
 class DocumentService:
     def __init__(self, db: DB):
+        """Initialize DocumentService with database connection and embedder."""
         self.db = db
         self.embedder = Embedder()
         self.docs = DocumentRepository(self.db)

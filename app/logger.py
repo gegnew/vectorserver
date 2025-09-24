@@ -9,6 +9,7 @@ def setup_logger(
     level: str | None = None,
     format_string: str | None = None,
 ) -> logging.Logger:
+    """Configure and return a logger with specified name, level, and format."""
     logger = logging.getLogger(name)
 
     log_level = level or ("DEBUG" if settings.debug else "INFO")

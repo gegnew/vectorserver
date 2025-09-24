@@ -9,6 +9,7 @@ from app.repositories.base import BaseRepository
 
 class ChunkRepository(BaseRepository[Chunk]):
     def to_entity(self, row):
+        """Convert database row to Chunk entity."""
         return Chunk(
             id=UUID(row[0]),
             content=row[1],

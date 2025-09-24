@@ -10,6 +10,7 @@ from app.repositories.db import get_db
 
 class ChunkService:
     def __init__(self, chunk_repo: ChunkRepository):
+        """Initialize ChunkService with chunk repository."""
         self.chunk_repo = chunk_repo
 
     async def get_chunk(self, chunk_id: UUID) -> Chunk | None:

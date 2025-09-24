@@ -3,6 +3,7 @@ import numpy as np
 
 class KMeans:
     def __init__(self, n_clusters: int = 3, max_iters: int = 32):
+        """Initialize KMeans with number of clusters and maximum iterations."""
         self.n_clusters = n_clusters
         self.max_iters = max_iters
         self.centroids = None
@@ -10,6 +11,7 @@ class KMeans:
         self.is_fitted = False
 
     def fit(self, X):
+        """Fit KMeans clustering algorithm to the data."""
         # Initialize centroids randomly.
         # If fewer data points than clusters, use all data points and reduce clusters
         n_samples = len(X)
@@ -45,6 +47,7 @@ class KMeans:
         return self
 
     def predict(self, X):
+        """Predict cluster assignments for new data points."""
         if not self.is_fitted:
             raise ValueError("KMeans must be fitted before prediction")
 
@@ -52,6 +55,7 @@ class KMeans:
         return np.argmin(distances, axis=0)
 
     def _calculate_distances(self, X):
+        """Calculate distances from data points to all centroids."""
         n_samples = X.shape[0]
         distances = np.zeros((self.n_clusters, n_samples))
         for i in range(n_samples):
@@ -62,6 +66,7 @@ class KMeans:
 
 class IVF:
     def __init__(self, n_clusters: int = 16, max_iters: int = 32):
+        """Initialize IVF index with KMeans clustering for coarse search."""
         self.n_clusters = n_clusters
         self.ix = [[] for _ in range(self.n_clusters + 1)]
         self.max_iters = max_iters
@@ -69,25 +74,31 @@ class IVF:
         self.index = None
 
     def fit(self, X):
+        """Fit the IVF index by training the underlying KMeans clustering."""
         self.kmeans.fit(X)
         return self
 
     def predict(self, X):
+        """Predict cluster assignments using the trained KMeans model."""
         return self.kmeans.predict(X)
 
     @property
     def centroids(self):
+        """Get the cluster centroids from KMeans."""
         return self.kmeans.centroids
 
     @property
     def labels(self):
+        """Get the cluster labels from KMeans."""
         return self.kmeans.labels
 
     @property
     def is_fit(self):
+        """Check if the IVF index has been fitted."""
         return self.kmeans.is_fitted
 
     def create_index(self, dataset):
+        """Create inverted file index by grouping vector indices by cluster assignment."""
         # Fit the dataset and get cluster assignments
         if not self.is_fit:
             self.fit(dataset)
@@ -100,6 +111,7 @@ class IVF:
         return self.index
 
     def search(self, query):
+        """Search for vectors in the same cluster as the query vector."""
         # Ensure query is 1D vector for distance calculation
         if query.ndim > 1:
             query = query.flatten()

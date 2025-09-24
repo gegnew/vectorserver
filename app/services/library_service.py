@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 class LibraryService:
     def __init__(self, db: DB):
+        """Initialize LibraryService with database connection and repositories."""
         self.db = db
         self.libraries = LibraryRepository(self.db)
         self.docs = DocumentRepository(self.db)

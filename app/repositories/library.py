@@ -9,6 +9,7 @@ from app.repositories.base import BaseRepository
 
 class LibraryRepository(BaseRepository[Library]):
     def to_entity(self, row):
+        """Convert database row to Library entity."""
         return Library(
             id=UUID(row[0]),
             name=row[1],
