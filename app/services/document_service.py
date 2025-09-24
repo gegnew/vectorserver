@@ -54,38 +54,21 @@ class DocumentService:
     async def update(
         self, document_id: UUID, title: str, content: str, metadata: dict = None
     ) -> Document:
+        """Update a document and handle content changes."""
         if metadata is None:
             metadata = {}
         try:
-            doc = await self.docs.find(document_id)
-            if not doc:
-                raise DocumentNotFoundException(document_id)
-
-            # Check if content is being changed
-            content_changed = content != doc.content
+            document = await self._get_and_validate_document(document_id)
+            content_changed = self._is_content_changed(document.content, content)
 
             # Update document fields
-            doc.title = title
-            doc.content = content
-            doc.metadata = metadata
-            updated_doc = await self.docs.update(doc)
+            document.title = title
+            document.content = content
+            document.metadata = metadata
+            updated_doc = await self.docs.update(document)
 
-            # re-chunk and re-embed if content changed
             if content_changed:
-                # Use transaction to ensure chunk operations are atomic
-                async with self.db.transaction() as tx_db:
-                    # Delete old chunks
-                    old_chunks = await self.chunks.find_by_document(document_id)
-                    for chunk in old_chunks:
-                        await self.chunks.delete_transactional(chunk.id, tx_db)
-
-                    # create new chunks
-                    if content:
-                        chunks = self._chunk_and_embed_document(updated_doc)
-                        for chunk in chunks:
-                            await self.chunks.create_transactional(chunk, tx_db)
-
-                # Note: Caller should invalidate search indexes after this operation
+                await self._handle_content_change(document_id, updated_doc)
 
             return updated_doc
         except DocumentNotFoundException:
@@ -93,6 +76,42 @@ class DocumentService:
         except Exception as e:
             logger.error(f"Failed to update document {document_id}: {str(e)}")
             raise DatabaseError(f"Failed to update document: {str(e)}") from e
+
+    async def _get_and_validate_document(self, document_id: UUID) -> Document:
+        """Get document by ID and validate it exists."""
+        document = await self.docs.find(document_id)
+        if not document:
+            raise DocumentNotFoundException(document_id)
+        return document
+
+    def _is_content_changed(self, old_content: str, new_content: str) -> bool:
+        """Check if document content has changed."""
+        return new_content != old_content
+
+    async def _handle_content_change(
+        self, document_id: UUID, document: Document
+    ) -> None:
+        """Handle content change by recreating chunks with new embeddings."""
+        # Use transaction to ensure chunk operations are atomic
+        async with self.db.transaction() as tx_db:
+            await self._delete_existing_chunks(document_id, tx_db)
+
+            if document.content:  # Only create chunks if content exists
+                await self._create_new_chunks(document, tx_db)
+
+        # Note: Caller should invalidate search indexes after this operation
+
+    async def _delete_existing_chunks(self, document_id: UUID, tx_db) -> None:
+        """Delete all existing chunks for a document."""
+        old_chunks = await self.chunks.find_by_document(document_id)
+        for chunk in old_chunks:
+            await self.chunks.delete_transactional(chunk.id, tx_db)
+
+    async def _create_new_chunks(self, document: Document, tx_db) -> None:
+        """Create new chunks with embeddings for the document."""
+        chunks = self._chunk_and_embed_document(document)
+        for chunk in chunks:
+            await self.chunks.create_transactional(chunk, tx_db)
 
     async def delete(self, document_id: UUID) -> bool:
         try:

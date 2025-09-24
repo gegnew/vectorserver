@@ -1,39 +1,41 @@
-import json
-from datetime import UTC, datetime
-from uuid import UUID, uuid4
+"""Chunk models with proper inheritance and validation."""
 
-from pydantic import BaseModel, Field, field_validator
+from uuid import UUID
+
+from pydantic import BaseModel
+
+from .base import BaseEntityModel
 
 
 class ChunkBase(BaseModel):
+    """Base chunk model with common fields."""
+
     content: str
     embedding: bytes
-    metadata: dict | None = None
     document_id: UUID
 
-    @field_validator("metadata", mode="before")
-    @classmethod
-    def text_to_dict(cls, value: str | dict | None) -> dict | None:
-        if isinstance(value, str):
-            return json.loads(value)
-        return value
 
+class Chunk(BaseEntityModel, ChunkBase):
+    """Chunk with timestamps and metadata validation."""
 
-class Chunk(ChunkBase):
-    id: UUID = Field(default_factory=uuid4)
-    created_at: datetime = Field(default=datetime.now(UTC))
-    updated_at: datetime | None = None
+    pass
 
 
 class ChunkGet(ChunkBase):
+    """Chunk model for GET responses."""
+
     pass
 
 
 class ChunkCreate(ChunkBase):
+    """Chunk model for creation requests."""
+
     pass
 
 
 class ChunkUpdate(BaseModel):
+    """Chunk model for update requests with optional fields."""
+
     content: str | None = None
     embedding: bytes | None = None
     metadata: dict | None = None

@@ -1,39 +1,41 @@
-import json
-from datetime import UTC, datetime
-from uuid import UUID, uuid4
+"""Document models with proper inheritance and validation."""
 
-from pydantic import BaseModel, Field, field_validator
+from uuid import UUID
+
+from pydantic import BaseModel
+
+from .base import BaseEntityModel
 
 
 class DocumentBase(BaseModel):
+    """Base document model with common fields."""
+
     title: str
     content: str | None = None
-    metadata: dict | None = None
     library_id: UUID
 
-    @field_validator("metadata", mode="before")
-    @classmethod
-    def text_to_dict(cls, value: str | dict | None) -> dict | None:
-        if isinstance(value, str):
-            return json.loads(value)
-        return value
 
+class Document(BaseEntityModel, DocumentBase):
+    """Document with timestamps and metadata validation."""
 
-class Document(DocumentBase):
-    id: UUID = Field(default_factory=uuid4)
-    created_at: datetime = Field(default=datetime.now(UTC))
-    updated_at: datetime | None = None
+    pass
 
 
 class DocumentGet(DocumentBase):
+    """Document model for GET responses."""
+
     pass
 
 
 class DocumentCreate(DocumentBase):
+    """Document model for creation requests."""
+
     pass
 
 
 class DocumentUpdate(BaseModel):
+    """Document model for update requests with optional fields."""
+
     title: str | None = None
     content: str | None = None
     metadata: dict | None = None

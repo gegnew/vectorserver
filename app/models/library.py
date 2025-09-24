@@ -1,40 +1,38 @@
-import json
-from datetime import UTC, datetime
-from uuid import UUID, uuid4
+"""Library models with proper inheritance and validation."""
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
+
+from .base import BaseEntityModel
 
 
 class LibraryBase(BaseModel):
+    """Base library model with common fields."""
+
     name: str
     description: str | None = None
-    metadata: dict | None = None
-
-    @field_validator("metadata", mode="before")
-    @classmethod
-    def text_to_dict(cls, value: str | dict) -> str:
-        match value:
-            case str():
-                return json.loads(value)
-            case dict():
-                return value
 
 
-class Library(LibraryBase):
-    id: UUID = Field(default_factory=uuid4)
-    created_at: datetime = Field(default=datetime.now(UTC))
-    updated_at: datetime | None = None
+class Library(BaseEntityModel, LibraryBase):
+    """Library with timestamps and metadata validation."""
+
+    pass
 
 
 class LibraryGet(LibraryBase):
+    """Library model for GET responses."""
+
     pass
 
 
 class LibraryCreate(LibraryBase):
+    """Library model for creation requests."""
+
     pass
 
 
 class LibraryUpdate(BaseModel):
+    """Library model for update requests with optional fields."""
+
     name: str | None = None
     description: str | None = None
     metadata: dict | None = None
