@@ -36,11 +36,11 @@ class BaseRepository[T](ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def create_transactional(self, entity: T, db: "DB") -> T:
+    async def create_transactional(self, entity: T, db: DB) -> T:
         """Create entity within an existing transaction."""
         raise NotImplementedError()
 
     @abstractmethod
-    async def delete_transactional(self, _id: UUID, db: "DB") -> int:
+    async def delete_transactional(self, _id: UUID, db: DB) -> int:
         """Delete entity within an existing transaction."""
         raise NotImplementedError()

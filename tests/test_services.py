@@ -31,7 +31,7 @@ class TestLibraryService:
     @pytest.mark.asyncio
     async def test_create_library(self, service):
         docs_dir = Path("tests/docs/")
-        library = await service.create(
+        library = await service.create_library(
             Library(
                 name="Test Document Library",
                 description="""
@@ -57,13 +57,13 @@ class TestLibraryService:
                 },
             )
 
-        docs = await service.get_docs(library.id)
+        docs = await service.get_library_documents(library.id)
         assert len(docs) == len(documents)
 
     @pytest.mark.asyncio
     async def test_search_flat_index(self, service):
         docs_dir = Path("tests/docs/")
-        library = await service.create(
+        library = await service.create_library(
             Library(
                 name="Test Document Library",
                 description="Library for testing flat index search",
@@ -88,9 +88,7 @@ class TestLibraryService:
             )
 
         result = await service.search(
-            search_str="machine learning algorithms",
-            id=library.id,
-            index_type="flat"
+            search_str="machine learning algorithms", id=library.id, index_type="flat"
         )
 
         assert result is not None
@@ -98,7 +96,7 @@ class TestLibraryService:
     @pytest.mark.asyncio
     async def test_create_ivf_index(self, service):
         docs_dir = Path("tests/docs/")
-        library = await service.create(
+        library = await service.create_library(
             Library(
                 name="Test Document Library for IVF",
                 description="Library for testing IVF index",
@@ -123,9 +121,7 @@ class TestLibraryService:
             )
 
         result = await service.search(
-            search_str="artificial intelligence",
-            id=library.id,
-            index_type="ivf"
+            search_str="artificial intelligence", id=library.id, index_type="ivf"
         )
 
         assert result is not None

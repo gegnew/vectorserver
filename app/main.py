@@ -9,6 +9,12 @@ from .routes import chunks_router, indexes_router, libraries_router, search_rout
 from .routes.documents import router as documents_router
 from .settings import settings
 
+# Fix forward references after all imports
+from .models.models import SearchResult
+from .models.document import Document
+
+SearchResult.model_rebuild()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

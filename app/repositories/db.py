@@ -106,7 +106,7 @@ class DB:
         """Begin a new transaction."""
         if not self._initialized:
             await self.initialize()
-        
+
         await self.conn.execute("BEGIN TRANSACTION")
 
     async def commit_transaction(self):
@@ -128,13 +128,13 @@ class DB:
 
     @asynccontextmanager
     async def transaction(self):
-        \"\"\"Context manager for database transactions.\"\"\"
+        """Context manager for database transactions."""
         await self.begin_transaction()
         try:
             yield self
             await self.commit_transaction()
         except Exception as e:
-            logger.error(f\"Transaction failed, rolling back: {str(e)}\")
+            logger.error(f"Transaction failed, rolling back: {str(e)}")
             await self.rollback_transaction()
             raise
 

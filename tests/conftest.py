@@ -26,11 +26,12 @@ async def service_with_documents():
     Spins up and down for each class; this is a bit slow, but we can optimize it later.
     """
     from app.repositories.db import create_db
+
     db = await create_db()
     service = LibraryService(db)
 
     docs_dir = Path("tests/docs/")
-    library = await service.create(
+    library = await service.create_library(
         Library(
             name="Test Document Library",
             description="""

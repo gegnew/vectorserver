@@ -18,6 +18,7 @@ from tests.conftest import create_test_chunk
 @pytest_asyncio.fixture(scope="class")
 async def test_db():
     import tempfile
+
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         db_path = f.name
 

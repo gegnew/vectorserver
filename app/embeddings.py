@@ -32,18 +32,18 @@ class Embedder:
         Load, chunk, embed, and store in database with smart chunking.
         """
         chunks_with_metadata = self._chunk_text(content)
-        
+
         if not chunks_with_metadata:
             return [], [], []
-        
+
         # Extract chunks and their metadata
         chunks = [chunk_text for chunk_text, metadata in chunks_with_metadata]
         metadatas = [metadata for chunk_text, metadata in chunks_with_metadata]
         chunk_lens = [len(chunk) for chunk in chunks]
-        
+
         # Get embeddings for all chunks
         embeddings = self.embed(chunks)
-        
+
         return chunks, embeddings, chunk_lens, metadatas
 
     def cosine_similarity(self, query, vectors, k: int = 5):

@@ -25,8 +25,7 @@ async def get_chunk(
     chunk = await service.get_chunk(chunk_id)
     if not chunk:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Chunk {chunk_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Chunk {chunk_id} not found"
         )
     return chunk
 
@@ -41,8 +40,7 @@ async def update_chunk(
     updated_chunk = await service.update_chunk(chunk_id, chunk_update)
     if not updated_chunk:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Chunk {chunk_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Chunk {chunk_id} not found"
         )
     return updated_chunk
 
@@ -57,19 +55,20 @@ async def delete_chunk(
     existing_chunk = await service.get_chunk(chunk_id)
     if not existing_chunk:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Chunk {chunk_id} not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Chunk {chunk_id} not found"
         )
-    
+
     deleted_count = await service.delete_chunk(chunk_id)
     if deleted_count == 0:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete chunk"
+            detail="Failed to delete chunk",
         )
 
 
-@router.get("/library/{library_id}", response_model=list[Chunk], status_code=status.HTTP_200_OK)
+@router.get(
+    "/library/{library_id}", response_model=list[Chunk], status_code=status.HTTP_200_OK
+)
 async def get_chunks_by_library(
     library_id: UUID,
     service: ChunkService = Depends(get_chunk_service),

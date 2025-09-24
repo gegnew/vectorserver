@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
-
-if TYPE_CHECKING:
-    from app.models.document import Document
 
 
 class MetadataFilter(BaseModel):
@@ -59,7 +56,7 @@ class SearchText(BaseModel):
 class SearchResult(BaseModel):
     """Search result with similarity score."""
 
-    document: Document
+    document: "Document"
     score: float = Field(
         ..., description="Similarity score (0-1, higher is more similar)"
     )

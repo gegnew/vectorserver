@@ -91,8 +91,11 @@ class TestEndToEnd:
             assert response.status_code == 200
 
             result = response.json()
-            assert "content" in result
-            assert "title" in result
+            assert len(result) > 0
+            first_result = result[0]
+            assert "document" in first_result
+            assert "content" in first_result["document"]
+            assert "title" in first_result["document"]
 
         response = client.delete("/libraries", params={"id": library_id})
         assert response.status_code == 202
@@ -134,9 +137,12 @@ class TestEndToEnd:
             response = client.post("/search", json=search_data)
             assert response.status_code == 200
             result = response.json()
-            assert "content" in result
+            assert len(result) > 0
+            first_result = result[0]
+            assert "document" in first_result
+            assert "content" in first_result["document"]
 
-            healthcare_found = "healthcare" in result.get("content", "").lower()
+            healthcare_found = "healthcare" in first_result["document"].get("content", "").lower()
             assert (
                 healthcare_found
             ), f"Healthcare content not found in {index_type} search results"

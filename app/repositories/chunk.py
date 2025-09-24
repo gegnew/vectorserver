@@ -116,13 +116,13 @@ class ChunkRepository(BaseRepository[Chunk]):
         return changes
 
     async def create_transactional(self, entity: Chunk, db=None) -> Chunk:
-        \"\"\"Create a chunk within an existing transaction.\"\"\"
+        """Create a chunk within an existing transaction."""
         target_db = db or self.db
         await target_db.execute_in_transaction(
-            \"\"\"
+            """
             INSERT INTO chunks (id, content, document_id, embedding,
             created_at, updated_at, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)
-            \"\"\",
+            """,
             (
                 str(entity.id),
                 entity.content,
@@ -136,7 +136,7 @@ class ChunkRepository(BaseRepository[Chunk]):
         return entity
 
     async def delete_transactional(self, id: UUID, db=None) -> int:
-        \"\"\"Delete a chunk within an existing transaction.\"\"\"
+        """Delete a chunk within an existing transaction."""
         target_db = db or self.db
         changes = await target_db.execute_in_transaction(
             "DELETE FROM chunks WHERE id = ?", (str(id),)
